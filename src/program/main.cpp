@@ -683,7 +683,7 @@ static void gen_meth_init(
         }
     }
 
-    put(os, "}\n\n");
+    put(os, "}\n\n", NULL);
 }
 
 static void gen_meth_init_from_args(
@@ -1155,7 +1155,7 @@ static void gen_init(
         }
     }
 
-    put(os, "}\n\n");
+    put(os, "}\n\n", NULL);
 
     /* $0=sn $1=(Instance|ObjectPath) */
     const char FMT2[] =

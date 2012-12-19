@@ -789,23 +789,6 @@ void MOF_Class_Decl::validate()
 
     qualifiers->validate_list(expected_scope);
 
-    /*
-     * Disallow key definitions if any ancestor has already defined a key.
-     */
-
-    if (super_class)
-    {
-        size_t n1 = super_class->count_keys();
-        size_t n2 = count_keys();
-
-        if (n1 && n1 != n2)
-        {
-            MOF_error_printf(
-                "a subclass cannot define any keys if the superclass has");
-            return;
-        }
-    }
-
 #if 0
     // Track average number of features.
 

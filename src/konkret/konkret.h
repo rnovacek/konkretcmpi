@@ -2630,7 +2630,7 @@ KEXTERN size_t KStrlcat(char* dest, const char* src, size_t size);
 */
 
 #define KONKRET_REGISTRATION(NAMESPACE, CLASS, PROVIDERNAME, TYPES) \
-    static KUNUSED const char __konkret_registration[] = \
+    static volatile KUNUSED const char __konkret_registration[] = \
     "@(#)KONKRET_REGISTRATION=" NAMESPACE ":" CLASS ":" PROVIDERNAME ":" TYPES;
 
 #endif /* _konkret_h */

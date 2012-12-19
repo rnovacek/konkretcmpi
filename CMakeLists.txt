@@ -3,6 +3,9 @@ project(konkretcmpi)
 
 cmake_minimum_required(VERSION 2.6)
 
+set(CMAKE_C_FLAGS "-std=c99 -Wall -pedantic -g -Wextra -Wno-unused-parameter -Wformat -Wparentheses -Wl,--no-undefined ${CMAKE_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++98 -Wall -pedantic -Wno-long-long -g -Wextra -Wno-unused-parameter -Wformat -Wparentheses -Wl,--no-undefined ${CMAKE_CXX_FLAGS}")
+
 find_package(CMPI)
 
 # Set LIB_SUFFIX to 64 on 64bit architectures

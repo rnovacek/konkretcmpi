@@ -40,7 +40,7 @@ void MOF_Reference_Decl::print() const
 {
     MOF_Indent(1);
     printf("+ ref %s %s alias(%s) obj_ref(%p)\n", 
-        class_name, name, alias, obj_ref);
+        class_name, name, alias, (void *) obj_ref);
     qualifiers->print_list(3);
 }
 

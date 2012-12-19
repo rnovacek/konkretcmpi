@@ -33,10 +33,6 @@
 #include "MOF_Class_Decl.h"
 #include "REF_Parser.h"
 
-#ifdef __USE_GNU
-extern "C" FILE* open_memstream(char **, size_t *);
-#endif
-
 MOF_Object_Reference::~MOF_Object_Reference()
 {
     if (class_name)

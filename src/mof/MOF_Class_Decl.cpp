@@ -144,9 +144,6 @@ static void _validate_feature_compatibility(
 
         if (MOF_stricmp(pp->class_name, qq->class_name) != 0)
         {
-            const char* descendent = pp->class_name;
-            const char* ancestor = pp->class_name;
-
             // Be sure that descendent descends from ancestor.
 
             const MOF_Class_Decl* tmp_class_decl =

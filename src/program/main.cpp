@@ -25,6 +25,7 @@
 */
 
 #include <konkret/konkret.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -2270,8 +2271,6 @@ static void gen_provider(const MOF_Class_Decl* cd)
         provider_types = "indication";
     else
         provider_types = "instance method";
-
-    const char* rn = alias(cd->name);
 
     fprintf(os, "KONKRET_REGISTRATION(\n");
     fprintf(os, "    \"%s\",\n", "root/cimv2");

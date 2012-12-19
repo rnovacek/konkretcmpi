@@ -28,6 +28,8 @@
 #define enumInstanceNames enumerateInstanceNames
 #include "konkret.h"
 
+#include <strings.h>
+
 #define MAX_REFS 32
 
 typedef void (*FindCallback)(

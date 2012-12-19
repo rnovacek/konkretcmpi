@@ -86,7 +86,7 @@ static CMPIStatus _DefaultEIN_returnDone(
     KReturn(ERR_FAILED);
 }
 
-#if 0
+#ifdef CMPI_VER_200
 static CMPIStatus _DefaultEIN_returnError(
     const CMPIResult* self, 
     const CMPIError* err)
@@ -111,7 +111,7 @@ CMPIStatus KDefaultEnumerateInstanceNames(
         _DefaultEIN_returnInstance,
         _DefaultEIN_returnObjectPath,
         _DefaultEIN_returnDone,
-#if 0
+#ifdef CMPI_VER_200
         _DefaultEIN_returnError
 #endif
     };

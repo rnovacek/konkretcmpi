@@ -47,20 +47,20 @@
 
 #define MOF_LINKAGE /* */
 
-typedef unsigned long long MOF_uint64;
-typedef long long MOF_sint64;
+typedef u_int64_t MOF_uint64;
+typedef int64_t MOF_sint64;
 
 
-typedef unsigned char MOF_uint8;
-typedef signed char MOF_sint8;
-typedef unsigned short MOF_uint16;
-typedef signed short MOF_sint16;
-typedef unsigned int MOF_uint32;
-typedef signed int MOF_sint32;
+typedef u_int8_t MOF_uint8;
+typedef int8_t MOF_sint8;
+typedef u_int16_t MOF_uint16;
+typedef int16_t MOF_sint16;
+typedef u_int32_t MOF_uint32;
+typedef int32_t MOF_sint32;
 typedef char* MOF_String;
 typedef float MOF_real32;
 typedef double MOF_real64;
-typedef unsigned short MOF_char16; /* UCS-2 character */
+typedef u_int16_t MOF_char16; /* UCS-2 character */
 
 typedef unsigned int MOF_mask;
 

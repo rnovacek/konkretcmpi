@@ -380,7 +380,7 @@ static void _print(
     {
         case TOK_INT_VALUE:
         {
-            fprintf(stream, "%lld", literal->int_value);
+            fprintf(stream, "%ld", literal->int_value);
             break;
         }
 

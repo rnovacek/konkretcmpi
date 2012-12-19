@@ -1045,7 +1045,7 @@ CMPIBoolean KArray_Null(
 }
 
 void KArray_Get(
-    KArray* self,
+    const KArray* self,
     CMPICount i,
     CMPIType type,
     KValue* value)
@@ -1091,7 +1091,7 @@ CMPIBoolean KStringA_Set(
 }
 
 const char* KStringA_Get(
-    KStringA* self,
+    const KStringA* self,
     CMPICount i)
 {
     KString ks;

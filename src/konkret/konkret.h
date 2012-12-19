@@ -1227,7 +1227,7 @@ KEXTERN CMPIBoolean KArray_Set(
 KEXTERN CMPIBoolean KArray_Null(KArray* self, CMPICount i, CMPIType type);
 
 KEXTERN void KArray_Get(
-    KArray* self, 
+    const KArray* self,
     CMPICount i, 
     CMPIType type, 
     KValue* value);
@@ -1285,10 +1285,10 @@ KINLINE CMPIBoolean KBooleanA_Null(KBooleanA* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_boolean);
 }
 
-KINLINE KBoolean KBooleanA_Get(KBooleanA* self, CMPICount i)
+KINLINE KBoolean KBooleanA_Get(const KBooleanA* self, CMPICount i)
 {
     KBoolean result;
-    KArray_Get((KArray*)self, i, CMPI_boolean, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_boolean, (KValue*)&result);
     return result;
 }
 
@@ -1344,10 +1344,10 @@ KINLINE CMPIBoolean KUint8A_Null(KUint8A* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_uint8);
 }
 
-KINLINE KUint8 KUint8A_Get(KUint8A* self, CMPICount i)
+KINLINE KUint8 KUint8A_Get(const KUint8A* self, CMPICount i)
 {
     KUint8 result;
-    KArray_Get((KArray*)self, i, CMPI_uint8, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_uint8, (KValue*)&result);
     return result;
 }
 
@@ -1403,10 +1403,10 @@ KINLINE CMPIBoolean KSint8A_Null(KSint8A* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_sint8);
 }
 
-KINLINE KSint8 KSint8A_Get(KSint8A* self, CMPICount i)
+KINLINE KSint8 KSint8A_Get(const KSint8A* self, CMPICount i)
 {
     KSint8 result;
-    KArray_Get((KArray*)self, i, CMPI_sint8, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_sint8, (KValue*)&result);
     return result;
 }
 
@@ -1462,10 +1462,10 @@ KINLINE CMPIBoolean KUint16A_Null(KUint16A* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_uint16);
 }
 
-KINLINE KUint16 KUint16A_Get(KUint16A* self, CMPICount i)
+KINLINE KUint16 KUint16A_Get(const KUint16A* self, CMPICount i)
 {
     KUint16 result;
-    KArray_Get((KArray*)self, i, CMPI_uint16, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_uint16, (KValue*)&result);
     return result;
 }
 
@@ -1521,10 +1521,10 @@ KINLINE CMPIBoolean KSint16A_Null(KSint16A* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_sint16);
 }
 
-KINLINE KSint16 KSint16A_Get(KSint16A* self, CMPICount i)
+KINLINE KSint16 KSint16A_Get(const KSint16A* self, CMPICount i)
 {
     KSint16 result;
-    KArray_Get((KArray*)self, i, CMPI_sint16, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_sint16, (KValue*)&result);
     return result;
 }
 
@@ -1580,10 +1580,10 @@ KINLINE CMPIBoolean KUint32A_Null(KUint32A* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_uint32);
 }
 
-KINLINE KUint32 KUint32A_Get(KUint32A* self, CMPICount i)
+KINLINE KUint32 KUint32A_Get(const KUint32A* self, CMPICount i)
 {
     KUint32 result;
-    KArray_Get((KArray*)self, i, CMPI_uint32, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_uint32, (KValue*)&result);
     return result;
 }
 
@@ -1639,10 +1639,10 @@ KINLINE CMPIBoolean KSint32A_Null(KSint32A* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_sint32);
 }
 
-KINLINE KSint32 KSint32A_Get(KSint32A* self, CMPICount i)
+KINLINE KSint32 KSint32A_Get(const KSint32A* self, CMPICount i)
 {
     KSint32 result;
-    KArray_Get((KArray*)self, i, CMPI_sint32, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_sint32, (KValue*)&result);
     return result;
 }
 
@@ -1698,10 +1698,10 @@ KINLINE CMPIBoolean KUint64A_Null(KUint64A* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_uint64);
 }
 
-KINLINE KUint64 KUint64A_Get(KUint64A* self, CMPICount i)
+KINLINE KUint64 KUint64A_Get(const KUint64A* self, CMPICount i)
 {
     KUint64 result;
-    KArray_Get((KArray*)self, i, CMPI_uint64, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_uint64, (KValue*)&result);
     return result;
 }
 
@@ -1757,10 +1757,10 @@ KINLINE CMPIBoolean KSint64A_Null(KSint64A* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_sint64);
 }
 
-KINLINE KSint64 KSint64A_Get(KSint64A* self, CMPICount i)
+KINLINE KSint64 KSint64A_Get(const KSint64A* self, CMPICount i)
 {
     KSint64 result;
-    KArray_Get((KArray*)self, i, CMPI_sint64, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_sint64, (KValue*)&result);
     return result;
 }
 
@@ -1816,10 +1816,10 @@ KINLINE CMPIBoolean KReal32A_Null(KReal32A* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_real32);
 }
 
-KINLINE KReal32 KReal32A_Get(KReal32A* self, CMPICount i)
+KINLINE KReal32 KReal32A_Get(const KReal32A* self, CMPICount i)
 {
     KReal32 result;
-    KArray_Get((KArray*)self, i, CMPI_real32, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_real32, (KValue*)&result);
     return result;
 }
 
@@ -1875,10 +1875,10 @@ KINLINE CMPIBoolean KReal64A_Null(KReal64A* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_real64);
 }
 
-KINLINE KReal64 KReal64A_Get(KReal64A* self, CMPICount i)
+KINLINE KReal64 KReal64A_Get(const KReal64A* self, CMPICount i)
 {
     KReal64 result;
-    KArray_Get((KArray*)self, i, CMPI_real64, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_real64, (KValue*)&result);
     return result;
 }
 
@@ -1934,10 +1934,10 @@ KINLINE CMPIBoolean KChar16A_Null(KChar16A* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_char16);
 }
 
-KINLINE KChar16 KChar16A_Get(KChar16A* self, CMPICount i)
+KINLINE KChar16 KChar16A_Get(const KChar16A* self, CMPICount i)
 {
     KChar16 result;
-    KArray_Get((KArray*)self, i, CMPI_char16, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_char16, (KValue*)&result);
     return result;
 }
 
@@ -1999,18 +1999,18 @@ KINLINE CMPIBoolean KStringA_Null(KStringA* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_string);
 }
 
-KINLINE KString KStringA_GetString(KStringA* self, CMPICount i)
+KINLINE KString KStringA_GetString(const KStringA* self, CMPICount i)
 {
     KString result;
 
-    KArray_Get((KArray*)self, i, CMPI_string, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_string, (KValue*)&result);
     result.chars = KChars(result.value);
 
     return result;
 }
 
 KEXTERN const char* KStringA_Get(
-    KStringA* self,
+    const KStringA* self,
     CMPICount i);
 
 KINLINE void KStringA_Clr(KStringA* self)
@@ -2065,10 +2065,10 @@ KINLINE CMPIBoolean KDateTimeA_Null(KDateTimeA* self, CMPICount i)
     return KArray_Null((KArray*)self, i, CMPI_dateTime);
 }
 
-KINLINE KDateTime KDateTimeA_Get(KDateTimeA* self, CMPICount i)
+KINLINE KDateTime KDateTimeA_Get(const KDateTimeA* self, CMPICount i)
 {
     KDateTime result;
-    KArray_Get((KArray*)self, i, CMPI_dateTime, (KValue*)&result);
+    KArray_Get((const KArray*)self, i, CMPI_dateTime, (KValue*)&result);
     return result;
 }
 

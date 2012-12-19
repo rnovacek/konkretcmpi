@@ -1,0 +1,29 @@
+Version 8.1
+===========
+
+Wed Jul  9 21:22:25 CDT 2008
+
+Converted KonkretCMPI to use GNU autotools.
+
+Version 8.4
+===========
+
+Wed Jul 16 15:34:19 CDT 2008
+
+Fixed konkret command but that sometimes fails to generate required class 
+dependencies.
+
+Wed Aug  6 19:34:33 CDT 2008
+
+Changed generated provider names to be same as class name rather than alias 
+name.
+
+Wed Aug  6 19:39:05 CDT 2008
+
+Added KStrlcpy and KStrlcat functions.
+
+Wed Aug  6 19:39:59 CDT 2008
+
+Konkretreg command now escapes spaces in namespace when generating .registration
+files.
+

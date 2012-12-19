@@ -36,6 +36,7 @@
 #include <cassert>
 #include <cstdarg>
 #include <map>
+#include <set>
 #include <cassert>
 
 using namespace std;
@@ -1664,6 +1665,7 @@ static void gen_enums(
             value_map.push_back(tmp);
         }
 
+        set<string> names;
         if (values.size())
         {
             put(os, "typedef enum _$0_$1_Enum\n", sn, pn, NULL);
@@ -1677,6 +1679,14 @@ static void gen_enums(
                 char buf[32];
                 sprintf(buf, "%ld", x);
 
+                // Name must be unique
+                string nvn_ = nvn;
+                if (names.find(nvn_) != names.end()) {
+                    nvn_ = nvn + "_" + buf;
+                }
+                names.insert(nvn_);
+                nvn = nvn_;
+
                 put(os, "    $0_$1_$3 = $4,\n", 
                     sn, pn, vn, nvn.c_str(), buf, NULL);
             }
@@ -1687,13 +1697,23 @@ static void gen_enums(
 
         // Generate enuemrated setters:
 
+        names.clear();
         for (size_t i = 0; i < values.size(); i++)
         {
             const char* vn = values[i].c_str();
             string nvn = normalize_value_qual_name(vn);
+
             long x = i < value_map.size() ?  value_map[i] : 0;
             char buf[32];
             sprintf(buf, "%ld", x);
+
+            // Name must be unique
+            string nvn_ = nvn;
+            if (names.find(nvn_) != names.end()) {
+                nvn_ = nvn + "_" + buf;
+            }
+            names.insert(nvn_);
+            nvn = nvn_;
 
             // $0 = sn
             // $1 = pn

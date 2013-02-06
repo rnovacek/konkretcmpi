@@ -505,6 +505,11 @@ static CMPIStatus _set_value(KValue* kv, KTag tag, const CMPIData* cd)
             KString* ks = (KString*)kv;
             ks->chars = KChars(ks->value);
         }
+        if (tag & KTAG_ARRAY)
+        {
+            KArray* ks = (KArray*)kv;
+            ks->count = CMGetArrayCount(ks->value, NULL);
+        }
 
         /* ATTN: validate references and instances */
         KReturn(OK);

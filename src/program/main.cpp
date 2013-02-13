@@ -2276,7 +2276,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
     fprintf(os, "    \"%s\",\n", "root/cimv2");
     fprintf(os, "    \"%s\",\n", cd->name);
     fprintf(os, "    \"%s\",\n", cd->name);
-    fprintf(os, "    \"%s\");\n", provider_types.c_str());
+    fprintf(os, "    \"%s\")\n", provider_types.c_str());
 
     // Close the file:
     fclose(os);

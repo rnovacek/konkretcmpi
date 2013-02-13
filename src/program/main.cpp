@@ -2322,7 +2322,9 @@ static void gen1(const MOF_Class_Decl* cd, const char* al)
         "#ifndef _konkrete_%s_h\n"
         "#define _konkrete_%s_h\n"
         "\n"
-        "#include <konkret/konkret.h>\n";
+        "#include <konkret/konkret.h>\n"
+        "\n"
+        "#include <strings.h>\n";
 
     fprintf(os, HEADER, cn, cn);
 

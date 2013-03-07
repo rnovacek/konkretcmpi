@@ -82,6 +82,7 @@ public:
     static MOF_Class_Decl* list;
     char* alias;
     char* super_class_name;
+    char* file_name;
     class MOF_Class_Decl* super_class;
     MOF_Feature* features;
     MOF_Feature_Info* all_features;

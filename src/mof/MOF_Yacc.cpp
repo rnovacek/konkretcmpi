@@ -188,7 +188,7 @@ extern int MOF_lex();
 
 static void MOF_trace(const char* str);
 
-
+extern char *MOF_file_name;
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -1886,6 +1886,7 @@ yyreduce:
     {
 	MOF_trace("class_decl:1");
 	(yyval.class_decl) = (yyvsp[-2].class_decl);
+	(yyval.class_decl)->file_name = MOF_file_name ? strdup(MOF_file_name) : NULL;
 	(yyval.class_decl)->qualifiers = NULL;
 	(yyval.class_decl)->features = (yyvsp[-1].feature);
     ;}
@@ -1896,6 +1897,7 @@ yyreduce:
     {
 	MOF_trace("class_decl:2");
 	(yyval.class_decl) = (yyvsp[-2].class_decl);
+	(yyval.class_decl)->file_name = MOF_file_name ? strdup(MOF_file_name) : NULL;
 	(yyval.class_decl)->qualifiers = (yyvsp[-3].qual);
 	(yyval.class_decl)->features = (yyvsp[-1].feature);
     ;}

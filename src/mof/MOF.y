@@ -8,6 +8,8 @@ extern int MOF_lex();
 
 static void MOF_trace(const char* str);
 
+extern char *MOF_file_name;
+
 %}
 
 %union
@@ -640,6 +642,7 @@ class_decl
     {
 	MOF_trace("class_decl:1");
 	$$ = $1;
+	$$->file_name = MOF_file_name ? strdup(MOF_file_name) : NULL;
 	$$->qualifiers = NULL;
 	$$->features = $2;
     }

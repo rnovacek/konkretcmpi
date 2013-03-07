@@ -34,7 +34,7 @@
 
 MOF_Class_Decl* MOF_Class_Decl::list = 0;
 
-MOF_Class_Decl::MOF_Class_Decl() : alias(0), super_class_name(0), 
+MOF_Class_Decl::MOF_Class_Decl() : alias(0), super_class_name(0), file_name(0),
     super_class(0), features(0), all_features(0)
 {
 

@@ -28,11 +28,13 @@
 #ifndef _MOF_Config_h
 #define _MOF_Config_h
 
+#ifndef SWIG
 #include <cstdio>
 #include <cstdarg>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#endif
 
 #if defined(__GNUC__) && (__GNUC__ >= 4)
 # define MOF_PRINTF_ATTR(A1, A2) __attribute__((format (printf, A1, A2)))

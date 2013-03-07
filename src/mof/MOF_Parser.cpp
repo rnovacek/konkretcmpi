@@ -40,6 +40,11 @@ char* MOF_current_dir = 0;
 const char* MOF_include_paths[MAX_INCLUDES];
 size_t MOF_num_include_paths = 0;
 
+void MOF_add_include_path(const char *path)
+{
+    MOF_include_paths[MOF_num_include_paths++] = path;
+}
+
 const char* MOF_generate_classes[MAX_GENERATES];
 size_t MOF_num_generate_classes = 0;
 

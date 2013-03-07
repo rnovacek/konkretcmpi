@@ -57,6 +57,9 @@ public:
         owning_class = strdup(owning_class_);
     }
 
+    MOF_Qualifier *get(const char *name);
+    bool has_key(const char *name);
+
     char* name;
     class MOF_Literal* params;
     MOF_mask flavor;

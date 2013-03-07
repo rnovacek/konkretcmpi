@@ -71,6 +71,13 @@ public:
         bool bool_value;
         MOF_String string_value;
     };
+
+    // SWIG doesn't support nested unions, so we need access functions
+    MOF_sint64 get_int() { return int_value; }
+    MOF_real64 get_real() { return real_value; }
+    MOF_char16 get_char() { return char_value; }
+    bool get_bool() { return bool_value; }
+    MOF_String get_string() { return string_value; }
 };
 
 #endif /* _MOF_Literal_h */

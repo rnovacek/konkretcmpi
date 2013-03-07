@@ -231,3 +231,24 @@ void MOF_Qualifier::validate_list(int expected_scope)
     }
 }
 
+MOF_Qualifier *MOF_Qualifier::get(const char* name)
+{
+    MOF_Qualifier* p;
+    for (p = this; p != 0; p = (MOF_Qualifier*)p->next) {
+        if (strcasecmp(p->name, name) == 0) {
+            return p;
+        }
+    }
+    return NULL;
+}
+
+bool MOF_Qualifier::has_key(const char* name)
+{
+    MOF_Qualifier* p;
+    for (p = this; p != 0; p = (MOF_Qualifier*)p->next) {
+        if (strcasecmp(p->name, name) == 0) {
+            return true;
+        }
+    }
+    return false;
+}

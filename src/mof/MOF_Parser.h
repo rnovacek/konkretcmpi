@@ -32,9 +32,12 @@
 #include "MOF_Types.h"
 #include "MOF_Yacc.h"
 #include "MOF_Options.h"
+
+#ifndef SWIG
 #include <string>
 #include <cstdio>
 #include <cstdlib>
+#endif
 
 #define MAX_INCLUDES 2000
 #define MAX_GENERATES 2000
@@ -45,6 +48,8 @@ MOF_LINKAGE extern char* MOF_current_dir;
 
 MOF_LINKAGE extern const char* MOF_include_paths[MAX_INCLUDES];
 MOF_LINKAGE extern size_t MOF_num_include_paths;
+MOF_LINKAGE void MOF_add_include_path(const char *path);
+
 MOF_LINKAGE extern const char* MOF_generate_classes[MAX_GENERATES];
 MOF_LINKAGE extern size_t MOF_num_generate_classes;
 MOF_LINKAGE FILE* MOF_open_file(const char* path, std::string& full_path);

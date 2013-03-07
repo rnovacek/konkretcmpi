@@ -15,7 +15,7 @@ else(CMAKE_SIZEOF_VOID_P EQUAL 4)
     set(LIB_SUFFIX 64)
 endif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 
-
+option(WITH_PYTHON "Build experimental Python bindings" OFF)
 
 add_subdirectory(cmake)
 add_subdirectory(src)

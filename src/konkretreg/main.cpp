@@ -24,7 +24,7 @@
 **==============================================================================
 */
 
-#include <konkret/konkret.h>
+#include "konkret/konkret.h"
 #include <unistd.h>
 #include <vector>
 #include <string>

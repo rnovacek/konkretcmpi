@@ -24,13 +24,13 @@
 **==============================================================================
 */
 
-#include <konkret/konkret.h>
+#include "konkret/konkret.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <mof/MOF_Parser.h>
-#include <mof/MOF_Options.h>
+#include "mof/MOF_Parser.h"
+#include "mof/MOF_Options.h"
 #include <vector>
 #include <string>
 #include <cctype>

@@ -50,10 +50,11 @@ class _Iter(object):
         self.items = items
         self.cast = cast
     def next(self):
-        self.items = self.items.next
-        if self.items is None:
+        r = self.items
+        if r is None:
             raise StopIteration
-        return self.cast(self.items)
+        self.items = self.items.next
+        return self.cast(r)
 MOF_Feature_Info.__iter__ = lambda self: _Iter(self, _Cast_To_MOF_Feature_Info)
 MOF_Key_Value_Pair.__iter__ = lambda self: _Iter(self, _Cast_To_MOF_Key_Value_Pair)
 MOF_Named_Element.__iter__ = lambda self: _Iter(self, _Cast_To_MOF_Named_Element)

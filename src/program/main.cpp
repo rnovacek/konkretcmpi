@@ -44,6 +44,8 @@
 
 using namespace std;
 
+vector<string> rstr;
+vector<string> rfile;
 static const char* arg0;
 static vector<string> skeletons;
 vector<string> classnames;
@@ -2207,6 +2209,32 @@ const char INDICATION_PROVIDER[] =
     "    _cb, \n"
     "    <ALIAS>Initialize())\n";
 
+string exreplace(string text)
+{
+    vector<string>::iterator f = rfile.begin();
+    for (vector<string>::iterator s = rstr.begin(); s != rstr.end(); ++s) {
+        string fn = *f;
+        ifstream rt(fn.c_str(), ios::in|ios::ate|ios::binary);
+        if (!rt) {
+            err("problem opening file");
+            err(fn.c_str());
+            exit(1);
+        }
+        streampos length = rt.tellg();
+        rt.seekg(0,ios::beg);
+
+        string templ;
+        templ.reserve(length);
+        templ.assign(istreambuf_iterator<char>(rt),istreambuf_iterator<char>());
+
+        rt.close();
+        string sub = *s;
+        substitute(text, sub.c_str(), templ);
+        ++f;
+    }
+    return(text);
+}
+
 static void gen_provider(const MOF_Class_Decl* cd)
 {
     const char* sn = alias(cd->name);
@@ -2245,6 +2273,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         }
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
+        text = exreplace(text);
         fprintf(os, "%s", text.c_str());
     }
     else if (cd->qual_mask & MOF_QT_INDICATION)
@@ -2259,6 +2288,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         }
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
+        text = exreplace(text);
         fprintf(os, "%s", text.c_str());
     }
     else
@@ -2273,6 +2303,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         }
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
+        text = exreplace(text);
         fprintf(os, "%s", text.c_str());
     }
 
@@ -2500,6 +2531,7 @@ int main(int argc, char** argv)
         "Usage: %s [OPTIONS] CLASS=ALIAS[!]...\n"
         "\n"
         "OPTIONS:\n"
+        "  -R STR=FILE Replace STR for contents of FILE\n"
         "  -I DIR      Search for included MOF files in this directory\n"
         "  -m FILE     Add MOF file to list of MOFs to parse\n"
         "  -v          Print the version\n"
@@ -2580,10 +2612,43 @@ int main(int argc, char** argv)
 
     vector<string> args;
 
-    for (int opt; (opt = getopt(argc, argv, "I:m:vhs:pf:a:c:n:")) != -1; )
+    for (int opt; (opt = getopt(argc, argv, "R:I:m:vhs:pf:a:c:n:")) != -1; )
     {
         switch (opt)
         {
+            case 'R':
+            {
+                string replace;
+                replace.assign(optarg);
+                
+                string tmpstr = replace.substr(0, replace.find('='));
+                string tmpfile = replace.substr(replace.find('=') + 1);
+
+                if (tmpfile.size() == 0)
+                {
+                    err("invalid file name");
+                    exit(1);
+                }
+
+                if (tmpstr.size() > 7)
+                {
+                    err("too long string to replace. only 7 supported");
+                    exit(1);
+                }
+
+                ifstream ifile(tmpfile.c_str(), ios::in|ios::ate|ios::binary);
+                if (!ifile) {
+                    err("the replacement file either does not exist or is not readable");
+                    err(tmpfile.c_str());
+                    exit(1);
+                }
+                ifile.close();
+
+                rstr.push_back(tmpstr);
+                rfile.push_back(tmpfile);
+                
+                break;
+            }
             case 'I':
             {
                 if (MOF_num_include_paths == MAX_INCLUDES)

@@ -39,6 +39,7 @@
 #include <map>
 #include <set>
 #include <cassert>
+#include <fstream>
 #include <unistd.h>
 
 using namespace std;
@@ -47,6 +48,7 @@ static const char* arg0;
 static vector<string> skeletons;
 vector<string> classnames;
 vector<string> aliases;
+string eta, eti, etn;
 
 static void err(const char* format, ...)
 {
@@ -2234,7 +2236,13 @@ static void gen_provider(const MOF_Class_Decl* cd)
     if (cd->qual_mask & MOF_QT_ASSOCIATION)
     {
         // Association provider:
-        string text = ASSOCIATION_PROVIDER;
+        string text;
+        if (eta.empty())
+        {
+            text = ASSOCIATION_PROVIDER;
+        } else {
+            text = eta;
+        }
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2242,7 +2250,13 @@ static void gen_provider(const MOF_Class_Decl* cd)
     else if (cd->qual_mask & MOF_QT_INDICATION)
     {
         // Indication provider:
-        string text = INDICATION_PROVIDER;
+        string text;
+        if (etn.empty())
+        {
+            text = INDICATION_PROVIDER;
+        } else {
+            text = etn;
+        }
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2250,7 +2264,13 @@ static void gen_provider(const MOF_Class_Decl* cd)
     else
     {
         // Instance provider:
-        string text = INSTANCE_PROVIDER;
+        string text;
+        if (eti.empty())
+        {
+            text = INSTANCE_PROVIDER;
+        } else {
+            text = eti;
+        }
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2455,6 +2475,24 @@ static int _find_schema_mof(const char* path, string& schema_mof)
     return -1;
 }
 
+string extemplate(char *filename)
+{
+    ifstream pt(filename, ios::in|ios::ate|ios::binary);
+    if (!pt) {
+        err("problem opening file");
+        exit(1);
+    }
+    streampos length = pt.tellg();
+    pt.seekg(0,ios::beg);
+
+    string templ;
+    templ.reserve(length);
+    templ.assign(istreambuf_iterator<char>(pt),istreambuf_iterator<char>());
+
+    pt.close();
+    return(templ);
+}
+
 int main(int argc, char** argv)
 {
     arg0 = argv[0];
@@ -2462,13 +2500,16 @@ int main(int argc, char** argv)
         "Usage: %s [OPTIONS] CLASS=ALIAS[!]...\n"
         "\n"
         "OPTIONS:\n"
-        "  -I DIR     Search for included MOF files in this directory\n"
-        "  -m FILE    Add MOF file to list of MOFs to parse\n"
-        "  -v         Print the version\n"
-        "  -s CLASS   Write provider skeleton for CLASS to <ALIAS>Provider.c\n"
-        "             (or use CLASS=ALIAS! form instead).\n"
-        "  -f FILE    Read CLASS=ALIAS[!] argumetns the given file.\n"
-        "  -h         Print this help message\n"
+        "  -I DIR      Search for included MOF files in this directory\n"
+        "  -m FILE     Add MOF file to list of MOFs to parse\n"
+        "  -v          Print the version\n"
+        "  -s CLASS    Write provider skeleton for CLASS to <ALIAS>Provider.c\n"
+        "              (or use CLASS=ALIAS! form instead).\n"
+        "  -f FILE     Read CLASS=ALIAS[!] argumetns the given file.\n"
+        "  -h          Print this help message\n"
+        "  -a FILE     Template for association provider\n"
+        "  -c FILE     Template for class instance provider\n"
+        "  -n FILE     Template for indication provider\n"
         "\n"
         "ENVIRONMENT VARIABLES:\n"
         "  KONKRET_SCHEMA_DIR -- searched for schema MOF files\n"
@@ -2539,7 +2580,7 @@ int main(int argc, char** argv)
 
     vector<string> args;
 
-    for (int opt; (opt = getopt(argc, argv, "I:m:vhs:pf:")) != -1; )
+    for (int opt; (opt = getopt(argc, argv, "I:m:vhs:pf:a:c:n:")) != -1; )
     {
         switch (opt)
         {
@@ -2608,6 +2649,15 @@ int main(int argc, char** argv)
                 fclose(is);
                 break;
             }
+            case 'a':
+                eta = extemplate(optarg);
+                break;
+            case 'c':
+                eti = extemplate(optarg);
+                break;
+            case 'n':
+                etn = extemplate(optarg);
+                break; 
 
             default:
                 err("invalid option: %c; try -h for help", opt);

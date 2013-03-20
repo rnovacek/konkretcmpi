@@ -2276,7 +2276,7 @@ string expropers(string text, const MOF_Class_Decl* cd)
 	map<string,map<string,string> >::iterator p = pset.begin();
         while (p != pset.end()) {
             string pattern = p->first;
-            err(pattern.c_str());
+            printf("%s",pattern.c_str());
 
             printf("%s", expropers_recursive(p->second, cd).c_str());
 
@@ -2714,14 +2714,14 @@ int main(int argc, char** argv)
                 if (token.size() > 7)
                 {
                     err("too long string to replace. only 7 supported");
-                    exit(1);
+                    exit(2);
                 }
 
                 ifstream plistfile(listfile.c_str(), ios::in|ios::ate|ios::binary);
                 if (!plistfile) {
                     err("the replacement file either does not exist or is not readable");
                     err(listfile.c_str());
-                    exit(1);
+                    exit(3);
                 }
 
 		string line;
@@ -2734,7 +2734,7 @@ int main(int argc, char** argv)
 			if (!codefile) {
 				err("the code replacement file does not exist");
 				err(pfile.c_str());
-				exit(1);
+				exit(4);
 			}
 			codefile.close();
 			string pcode = extemplate(pfile.c_str());

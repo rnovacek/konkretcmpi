@@ -50,6 +50,8 @@ static const char* arg0;
 static vector<string> skeletons;
 vector<string> classnames;
 vector<string> aliases;
+
+vector<map<string,map<string,string> > > pall;
 string eta, eti, etn;
 
 static void err(const char* format, ...)
@@ -2209,6 +2211,81 @@ const char INDICATION_PROVIDER[] =
     "    _cb, \n"
     "    <ALIAS>Initialize())\n";
 
+
+string expropers_decls(map<string,string> prules, const MOF_Class_Decl* cd)
+{
+    string props;
+    printf("features of %s\n", cd->name);
+    props += "\nfeatures of "+string(cd->name);
+    for (MOF_Feature_Info* p = cd->all_features; p;
+        p = (MOF_Feature_Info*)p->next)
+    {
+        MOF_Feature* mf = p->feature;
+
+        if (strcasecmp(cd->name, p->class_origin->name) != 0)
+            continue;
+
+        // CIM_Class_Property:
+
+        MOF_Property_Decl* pd = dynamic_cast<MOF_Property_Decl*>(mf);
+
+        if (pd)
+        {
+            const char* pn = pd->name;
+            const char* ktn = _ktype_name(pd->data_type);
+
+            if (pd->array_index == 0) {
+                props+= string(ktn) + string(pn);
+                printf("    const %s %s;\n", ktn, pn);
+            } else {
+                props+= string(ktn)+"A" + string(pn);
+                printf("    const %sA %s;\n", ktn, pn);
+           }
+        }
+/* OK
+            map<string,string> typerules = p->second;
+            map<string,string>::iterator tr = typerules.begin();
+            while (tr != typerules.end());
+                string type = tr->first.c_str();
+                string content = tr->second.c_str();
+                err(pattern.c_str());
+                err(type.c_str());
+                err(content.c_str());
+OK END */
+
+
+    }
+    return(props);
+}
+
+string expropers_recursive(map<string,string> prules, const MOF_Class_Decl* cd)
+{
+    string props;
+    if (cd->super_class)
+        props = expropers_recursive(prules, cd->super_class) + props;
+    props += expropers_decls(prules, cd);
+    return props;
+}
+
+string expropers(string text, const MOF_Class_Decl* cd)
+{
+    vector<map<string,map<string,string> > >::iterator ps = pall.begin();
+    while (ps != pall.end()) {
+        map<string,map<string,string> > pset = *ps;
+
+	map<string,map<string,string> >::iterator p = pset.begin();
+        while (p != pset.end()) {
+            string pattern = p->first;
+            err(pattern.c_str());
+
+            printf("%s", expropers_recursive(p->second, cd).c_str());
+
+        }
+        p++;
+    }
+    return(text);
+}
+
 string exreplace(string text)
 {
     vector<string>::iterator f = rfile.begin();
@@ -2274,6 +2351,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         text = exreplace(text);
+        text = expropers(text, cd);
         fprintf(os, "%s", text.c_str());
     }
     else if (cd->qual_mask & MOF_QT_INDICATION)
@@ -2289,6 +2367,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         text = exreplace(text);
+        text = expropers(text, cd);
         fprintf(os, "%s", text.c_str());
     }
     else
@@ -2304,6 +2383,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         text = exreplace(text);
+        text = expropers(text, cd);
         fprintf(os, "%s", text.c_str());
     }
 
@@ -2506,7 +2586,7 @@ static int _find_schema_mof(const char* path, string& schema_mof)
     return -1;
 }
 
-string extemplate(char *filename)
+string extemplate(const char *filename)
 {
     ifstream pt(filename, ios::in|ios::ate|ios::binary);
     if (!pt) {
@@ -2531,6 +2611,7 @@ int main(int argc, char** argv)
         "Usage: %s [OPTIONS] CLASS=ALIAS[!]...\n"
         "\n"
         "OPTIONS:\n"
+        "  -P STR=FILE Replace STR with properties. With property rules in FILE\n"
         "  -R STR=FILE Replace STR for contents of FILE\n"
         "  -I DIR      Search for included MOF files in this directory\n"
         "  -m FILE     Add MOF file to list of MOFs to parse\n"
@@ -2612,10 +2693,60 @@ int main(int argc, char** argv)
 
     vector<string> args;
 
-    for (int opt; (opt = getopt(argc, argv, "R:I:m:vhs:pf:a:c:n:")) != -1; )
+    for (int opt; (opt = getopt(argc, argv, "P:R:I:m:vhs:pf:a:c:n:")) != -1; )
     {
         switch (opt)
         {
+            case 'P':
+            {
+                string replace;
+                replace.assign(optarg);
+                
+                string token = replace.substr(0, replace.find('='));
+                string listfile = replace.substr(replace.find('=') + 1);
+
+                if (listfile.size() == 0)
+                {
+                    err("invalid file name");
+                    exit(1);
+                }
+
+                if (token.size() > 7)
+                {
+                    err("too long string to replace. only 7 supported");
+                    exit(1);
+                }
+
+                ifstream plistfile(listfile.c_str(), ios::in|ios::ate|ios::binary);
+                if (!plistfile) {
+                    err("the replacement file either does not exist or is not readable");
+                    err(listfile.c_str());
+                    exit(1);
+                }
+
+		string line;
+		map <string,string> tlist;
+		while (getline(plistfile, line)) {
+			string ptype = line.substr(0, line.find('='));
+			string pfile = line.substr(line.find('=') + 1);
+
+			ifstream codefile(pfile.c_str(), ios::in|ios::ate|ios::binary);
+			if (!codefile) {
+				err("the code replacement file does not exist");
+				err(pfile.c_str());
+				exit(1);
+			}
+			codefile.close();
+			string pcode = extemplate(pfile.c_str());
+			tlist[ptype] = pcode;
+		}
+                plistfile.close();
+		map<string,map<string, string> > ruleset;
+		ruleset[token] = tlist;
+		pall.push_back(ruleset);
+                break;
+            }
+
             case 'R':
             {
                 string replace;

@@ -2212,7 +2212,7 @@ const char INDICATION_PROVIDER[] =
     "    <ALIAS>Initialize())\n";
 
 
-string expropers_decls(map<string,string> prules, const MOF_Class_Decl* cd)
+static void expropers_decls(string &text, map<string,string> prules, const MOF_Class_Decl* cd)
 {
     string append;
 
@@ -2270,19 +2270,18 @@ OK END */
 
 
     }
-    return(append);
+    return;
 }
 
-string expropers_recursive(map<string,string> prules, const MOF_Class_Decl* cd)
+static void expropers_recursive(string &text, map<string,string> prules, const MOF_Class_Decl* cd)
 {
-    string props;
     if (cd->super_class)
-        props = expropers_recursive(prules, cd->super_class) + props;
-    props += expropers_decls(prules, cd);
-    return props;
+        expropers_recursive(text, prules, cd->super_class);
+    expropers_decls(text, prules, cd);
+    return;
 }
 
-string expropers(string text, const MOF_Class_Decl* cd)
+static void expropers(string text, const MOF_Class_Decl* cd)
 {
     vector<map<string,map<string,string> > >::iterator ps = pall.begin();
     while (ps != pall.end()) {
@@ -2292,12 +2291,14 @@ string expropers(string text, const MOF_Class_Decl* cd)
         while (p != pset.end()) {
             string pattern = p->first;
             printf("Property pattern %s\n",pattern.c_str());
-            substitute(text, pattern, expropers_recursive(p->second, cd));
+            string chunk;
+            expropers_recursive(chunk, p->second, cd);
+            substitute(text, pattern, chunk);
             p++;
         }
         ps++;
     }
-    return(text);
+    return;
 }
 
 string exreplace(string text)
@@ -2362,8 +2363,8 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = eta;
         }
-        text = exreplace(text);
-        text = expropers(text, cd);
+        exreplace(text);
+        expropers(text, cd);
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2378,8 +2379,8 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = etn;
         }
-        text = exreplace(text);
-        text = expropers(text, cd);
+        exreplace(text);
+        expropers(text, cd);
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2394,8 +2395,8 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = eti;
         }
-        text = exreplace(text);
-        text = expropers(text, cd);
+        exreplace(text);
+        expropers(text, cd);
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());

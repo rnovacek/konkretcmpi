@@ -2280,8 +2280,9 @@ string expropers(string text, const MOF_Class_Decl* cd)
 
             printf("%s", expropers_recursive(p->second, cd).c_str());
 
+            p++;
         }
-        p++;
+        ps++;
     }
     return(text);
 }

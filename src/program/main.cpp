@@ -2214,9 +2214,9 @@ const char INDICATION_PROVIDER[] =
 
 string expropers_decls(map<string,string> prules, const MOF_Class_Decl* cd)
 {
-    string props;
+    string append;
+
     printf("features of %s\n", cd->name);
-    props += "\nfeatures of "+string(cd->name);
     for (MOF_Feature_Info* p = cd->all_features; p;
         p = (MOF_Feature_Info*)p->next)
     {
@@ -2233,12 +2233,27 @@ string expropers_decls(map<string,string> prules, const MOF_Class_Decl* cd)
         {
             const char* pn = pd->name;
             const char* ktn = _ktype_name(pd->data_type);
+            
+            string type;
+            if (pd->array_index == 0) {
+                // is not array
+                type = string(_ktype_name(pd->data_type));
+            } else {
+                // is array
+                type = string(_ktype_name(pd->data_type))+string("A");
+            }
+
+            // XXX may need to extend by property name, class name, subclass name, superclass name rules
+            if (prules.find(type) != prules.end()) {
+                // type has mapping rule
+                append = prules[type];
+                substitute(append, "<PTYPE>", type);
+                substitute(append, "<PNAME>", pd->name);
+            }
 
             if (pd->array_index == 0) {
-                props+= string(ktn) + string(pn);
                 printf("    const %s %s;\n", ktn, pn);
             } else {
-                props+= string(ktn)+"A" + string(pn);
                 printf("    const %sA %s;\n", ktn, pn);
            }
         }
@@ -2255,7 +2270,7 @@ OK END */
 
 
     }
-    return(props);
+    return(append);
 }
 
 string expropers_recursive(map<string,string> prules, const MOF_Class_Decl* cd)
@@ -2276,10 +2291,8 @@ string expropers(string text, const MOF_Class_Decl* cd)
 	map<string,map<string,string> >::iterator p = pset.begin();
         while (p != pset.end()) {
             string pattern = p->first;
-            printf("%s",pattern.c_str());
-
-            printf("%s", expropers_recursive(p->second, cd).c_str());
-
+            printf("Property pattern %s\n",pattern.c_str());
+            substitute(text, pattern, expropers_recursive(p->second, cd));
             p++;
         }
         ps++;
@@ -2349,10 +2362,10 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = eta;
         }
-        substitute(text, "<ALIAS>", sn);
-        substitute(text, "<CLASS>", cd->name);
         text = exreplace(text);
         text = expropers(text, cd);
+        substitute(text, "<ALIAS>", sn);
+        substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
     }
     else if (cd->qual_mask & MOF_QT_INDICATION)
@@ -2365,10 +2378,10 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = etn;
         }
-        substitute(text, "<ALIAS>", sn);
-        substitute(text, "<CLASS>", cd->name);
         text = exreplace(text);
         text = expropers(text, cd);
+        substitute(text, "<ALIAS>", sn);
+        substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
     }
     else
@@ -2381,10 +2394,10 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = eti;
         }
-        substitute(text, "<ALIAS>", sn);
-        substitute(text, "<CLASS>", cd->name);
         text = exreplace(text);
         text = expropers(text, cd);
+        substitute(text, "<ALIAS>", sn);
+        substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
     }
 

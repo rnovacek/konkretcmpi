@@ -45,15 +45,15 @@
 
 using namespace std;
 
-vector<char> torder;
-vector<string> rstr;
-vector<string> rfile;
 static const char* arg0;
 static vector<string> skeletons;
 vector<string> classnames;
 vector<string> aliases;
 
+vector<char> torder;
+vector<pair<string,string> > rall;
 vector<map<string,map<string,string> > > pall;
+
 string eta, eti, etn;
 
 static void err(const char* format, ...)
@@ -2303,42 +2303,41 @@ static void expropers(string &text, const MOF_Class_Decl* cd)
     return;
 }
 
-static void exreplace(string &text)
+static void exreplace(pair<string,string> rrule, string &text)
 {
-    vector<string>::iterator f = rfile.begin();
-    for (vector<string>::iterator s = rstr.begin(); s != rstr.end(); ++s) {
-        string fn = *f;
-        ifstream rt(fn.c_str(), ios::in|ios::ate|ios::binary);
-        if (!rt) {
-            err("problem opening file");
-            err(fn.c_str());
-            exit(1);
-        }
-        streampos length = rt.tellg();
-        rt.seekg(0,ios::beg);
-
-        string templ;
-        templ.reserve(length);
-        templ.assign(istreambuf_iterator<char>(rt),istreambuf_iterator<char>());
-
-        rt.close();
-        string sub = *s;
-        substitute(text, sub.c_str(), templ);
-        ++f;
+    ifstream rchunk(rrule.second.c_str(), ios::in|ios::ate|ios::binary);
+    if (!rchunk) {
+        err("problem opening file %s", rrule.first.c_str());
     }
+    streampos length = rchunk.tellg();
+    rchunk.seekg(0,ios::beg);
+
+    string templ;
+    templ.reserve(length);
+    templ.assign(istreambuf_iterator<char>(rchunk),istreambuf_iterator<char>());
+
+    rchunk.close();
+    substitute(text, rrule.first.c_str(), templ);
     return;
 }
 
 
 static void transform(string &text, const MOF_Class_Decl* cd)
 {
+    
+    vector<pair<string,string> >::iterator ri = rall.begin();
+    vector<map<string,map<string,string> > >::iterator pi = pall.begin();
     for (vector<char>::iterator t = torder.begin(); t != torder.end(); t++) {
         switch (*t) {
         case 'R':
-            exreplace(text);
+            printf("%s\n", (*ri).first.c_str());
+            exreplace(*ri, text);
+            ri++;
         break;
         case 'P':
-            expropers(text, cd);
+//            printf("%s\n", (*pi).first.c_str());
+//            expropers(*pi, text, cd);
+            pi++;
         break;
         }
     }
@@ -2807,8 +2806,7 @@ int main(int argc, char** argv)
                 }
                 ifile.close();
 
-                rstr.push_back(tmpstr);
-                rfile.push_back(tmpfile);
+                rall.push_back(pair<string,string>(tmpstr, tmpfile));
                 
                 break;
             }

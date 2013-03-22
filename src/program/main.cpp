@@ -2333,13 +2333,14 @@ static void exreplace(string &text)
 static void transform(string &text, const MOF_Class_Decl* cd)
 {
     for (vector<char>::iterator t = torder.begin(); t != torder.end(); t++) {
-        switch (t) {
+        switch (*t) {
         case 'R':
             exreplace(text);
         break;
         case 'P':
             expropers(text, cd);
         break;
+        }
     }
     return;
 }

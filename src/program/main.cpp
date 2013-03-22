@@ -52,7 +52,7 @@ vector<string> aliases;
 
 vector<char> torder;
 vector<pair<string,string> > rall;
-vector<map<string,map<string,string> > > pall;
+vector<pair<string,map<string,string> > > pall;
 
 string eta, eti, etn;
 
@@ -2251,6 +2251,7 @@ static void expropers_decls(string &text, map<string,string> prules, const MOF_C
                 append = prules[type];
                 substitute(append, "<PTYPE>", type);
                 substitute(append, "<PNAME>", pd->name);
+                text+=append;
             }
 
             if (pd->array_index == 0) {
@@ -2283,23 +2284,12 @@ static void expropers_recursive(string &text, map<string,string> prules, const M
     return;
 }
 
-static void expropers(string &text, const MOF_Class_Decl* cd)
+static void expropers(pair<string,map<string,string> > pset, string &text, const MOF_Class_Decl* cd)
 {
-    vector<map<string,map<string,string> > >::iterator ps = pall.begin();
-    while (ps != pall.end()) {
-        map<string,map<string,string> > pset = *ps;
-
-	map<string,map<string,string> >::iterator p = pset.begin();
-        while (p != pset.end()) {
-            string pattern = p->first;
-            printf("Property pattern %s\n",pattern.c_str());
-            string chunk;
-            expropers_recursive(chunk, p->second, cd);
-            substitute(text, pattern, chunk);
-            p++;
-        }
-        ps++;
-    }
+    printf("Property pattern %s\n",pset.first.c_str());
+    string chunk;
+    expropers_recursive(chunk, pset.second, cd);
+    substitute(text, pset.first, chunk);
     return;
 }
 
@@ -2326,7 +2316,7 @@ static void transform(string &text, const MOF_Class_Decl* cd)
 {
     
     vector<pair<string,string> >::iterator ri = rall.begin();
-    vector<map<string,map<string,string> > >::iterator pi = pall.begin();
+    vector<pair<string,map<string,string> > >::iterator pi = pall.begin();
     for (vector<char>::iterator t = torder.begin(); t != torder.end(); t++) {
         switch (*t) {
         case 'R':
@@ -2335,8 +2325,8 @@ static void transform(string &text, const MOF_Class_Decl* cd)
             ri++;
         break;
         case 'P':
-//            printf("%s\n", (*pi).first.c_str());
-//            expropers(*pi, text, cd);
+            printf("%s\n", (*pi).first.c_str());
+            expropers(*pi, text, cd);
             pi++;
         break;
         }
@@ -2771,8 +2761,9 @@ int main(int argc, char** argv)
 			tlist[ptype] = pcode;
 		}
                 plistfile.close();
-		map<string,map<string, string> > ruleset;
-		ruleset[token] = tlist;
+		pair<string,map<string, string> > ruleset;
+		ruleset.first = token;
+                ruleset.second = tlist;
 		pall.push_back(ruleset);
                 break;
             }

@@ -41,9 +41,11 @@
 #include <cassert>
 #include <fstream>
 #include <unistd.h>
+#include <memory>
 
 using namespace std;
 
+vector<char> torder;
 vector<string> rstr;
 vector<string> rfile;
 static const char* arg0;
@@ -2281,7 +2283,7 @@ static void expropers_recursive(string &text, map<string,string> prules, const M
     return;
 }
 
-static void expropers(string text, const MOF_Class_Decl* cd)
+static void expropers(string &text, const MOF_Class_Decl* cd)
 {
     vector<map<string,map<string,string> > >::iterator ps = pall.begin();
     while (ps != pall.end()) {
@@ -2301,7 +2303,7 @@ static void expropers(string text, const MOF_Class_Decl* cd)
     return;
 }
 
-string exreplace(string text)
+static void exreplace(string &text)
 {
     vector<string>::iterator f = rfile.begin();
     for (vector<string>::iterator s = rstr.begin(); s != rstr.end(); ++s) {
@@ -2324,7 +2326,22 @@ string exreplace(string text)
         substitute(text, sub.c_str(), templ);
         ++f;
     }
-    return(text);
+    return;
+}
+
+
+static void transform(string &text, const MOF_Class_Decl* cd)
+{
+    for (vector<char>::iterator t = torder.begin(); t != torder.end(); t++) {
+        switch (t) {
+        case 'R':
+            exreplace(text);
+        break;
+        case 'P':
+            expropers(text, cd);
+        break;
+    }
+    return;
 }
 
 static void gen_provider(const MOF_Class_Decl* cd)
@@ -2363,8 +2380,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = eta;
         }
-        exreplace(text);
-        expropers(text, cd);
+        transform(text, cd);
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2379,8 +2395,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = etn;
         }
-        exreplace(text);
-        expropers(text, cd);
+        transform(text, cd);
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2395,8 +2410,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = eti;
         }
-        exreplace(text);
-        expropers(text, cd);
+        transform(text, cd);
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2714,6 +2728,7 @@ int main(int argc, char** argv)
         {
             case 'P':
             {
+                torder.push_back('P');
                 string replace;
                 replace.assign(optarg);
                 
@@ -2764,6 +2779,7 @@ int main(int argc, char** argv)
 
             case 'R':
             {
+                torder.push_back('R');
                 string replace;
                 replace.assign(optarg);
                 

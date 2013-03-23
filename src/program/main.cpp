@@ -1808,7 +1808,7 @@ static void substitute(
     size_t pos;
 
     while ((pos = text.find(pattern)) != size_t(-1))
-        text = text.substr(0, pos) + string(replacement) + text.substr(pos + 7);
+        text = text.substr(0, pos) + string(replacement) + text.substr(pos + pattern.strlen());
 }
 
 const char INSTANCE_PROVIDER[] =

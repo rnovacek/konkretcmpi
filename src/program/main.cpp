@@ -2721,45 +2721,42 @@ int main(int argc, char** argv)
                 replace.assign(optarg);
                 
                 string token = replace.substr(0, replace.find('='));
-                string listfile = replace.substr(replace.find('=') + 1);
+                string pfilename = replace.substr(replace.find('=') + 1);
 
-                if (listfile.size() == 0)
+                if (pfilename.size() == 0)
                 {
-                    err("invalid file name");
-                    exit(1);
+                    err("Invalid -P option %s. Use -P PATTERN=FILENAME", optarg);
                 }
 
                 if (token.size() > 7)
                 {
-                    err("too long string to replace. only 7 supported");
-                    exit(2);
+                    err("Property replacement token %s too long. only 7 supported", token.c_str());
                 }
 
-                ifstream plistfile(listfile.c_str(), ios::in|ios::ate|ios::binary);
-                if (!plistfile) {
-                    err("the replacement file either does not exist or is not readable");
-                    err(listfile.c_str());
-                    exit(3);
+                ifstream pmap(pfilename.c_str(), ios::in|ios::ate|ios::binary);
+                if (!pmap) {
+                    err("Property replacement file %s missing or unreadable.", pfilename.c_str());
+                } else {
+                    printf("Processing %s\n", pfilename);
                 }
 
 		string line;
 		map <string,string> tlist;
-		while (getline(plistfile, line)) {
+		while (getline(pmap, line)) {
+                        printf("-P line: %s\n", line.c_str());
 			string ptype = line.substr(0, line.find('='));
 			string pfile = line.substr(line.find('=') + 1);
 
 			ifstream codefile(pfile.c_str(), ios::in|ios::ate|ios::binary);
 			if (!codefile) {
-				err("the code replacement file does not exist");
-				err(pfile.c_str());
-				exit(4);
+				err("Property type %s replacement file %s missing or unreadable.", ptype.c_str(), pfile.c_str());
 			}
 			codefile.close();
 			string pcode = extemplate(pfile.c_str());
 			tlist[ptype] = pcode;
                         printf("Property type %s for %s\n", ptype.c_str(), pcode.c_str());
 		}
-                plistfile.close();
+                pmap.close();
 
                 pall.push_back(pair<string,map<string, string> >(token, tlist));
 

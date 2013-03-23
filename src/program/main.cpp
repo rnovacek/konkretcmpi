@@ -2214,11 +2214,11 @@ const char INDICATION_PROVIDER[] =
     "    <ALIAS>Initialize())\n";
 
 
-static void expropers_decls(string &text, map<string,string> prules, const MOF_Class_Decl* cd)
+static void expropers_decls(string &chunk, map<string,string> prules, const MOF_Class_Decl* cd)
 {
     string append;
 
-    printf("features of %s\n", cd->name);
+    printf("Properties of %s\n", cd->name);
     for (MOF_Feature_Info* p = cd->all_features; p;
         p = (MOF_Feature_Info*)p->next)
     {
@@ -2249,9 +2249,12 @@ static void expropers_decls(string &text, map<string,string> prules, const MOF_C
             if (prules.find(type) != prules.end()) {
                 // type has mapping rule
                 append = prules[type];
+                printf("\nTo be appended %s\n", append.c_str());
                 substitute(append, "<PTYPE>", type);
                 substitute(append, "<PNAME>", pd->name);
-                text+=append;
+                printf("\nTransformed appendix %s\n", append.c_str());
+                chunk+=append;
+                printf("\nMerged chunk %s\n", chunk.c_str());
             }
 
             if (pd->array_index == 0) {
@@ -2260,27 +2263,17 @@ static void expropers_decls(string &text, map<string,string> prules, const MOF_C
                 printf("    const %sA %s;\n", ktn, pn);
            }
         }
-/* OK
-            map<string,string> typerules = p->second;
-            map<string,string>::iterator tr = typerules.begin();
-            while (tr != typerules.end());
-                string type = tr->first.c_str();
-                string content = tr->second.c_str();
-                err(pattern.c_str());
-                err(type.c_str());
-                err(content.c_str());
-OK END */
-
-
     }
     return;
 }
 
-static void expropers_recursive(string &text, map<string,string> prules, const MOF_Class_Decl* cd)
+static void expropers_recursive(string &chunk, map<string,string> prules, const MOF_Class_Decl* cd)
 {
-    if (cd->super_class)
-        expropers_recursive(text, prules, cd->super_class);
-    expropers_decls(text, prules, cd);
+    if (cd->super_class) {
+        expropers_recursive(chunk, prules, cd->super_class);
+        printf("Nested chunk =======\n%s=======\n", chunk.c_str());
+    }
+    expropers_decls(chunk, prules, cd);
     return;
 }
 
@@ -2289,6 +2282,7 @@ static void expropers(pair<string,map<string,string> > pset, string &text, const
     printf("Property pattern %s\n",pset.first.c_str());
     string chunk;
     expropers_recursive(chunk, pset.second, cd);
+    printf("Finished properties ==========\n%s==========\n", chunk.c_str());
     substitute(text, pset.first, chunk);
     return;
 }
@@ -2320,12 +2314,12 @@ static void transform(string &text, const MOF_Class_Decl* cd)
     for (vector<char>::iterator t = torder.begin(); t != torder.end(); t++) {
         switch (*t) {
         case 'R':
-            printf("%s\n", (*ri).first.c_str());
+            printf("%s replaced for %s\n", (*ri).first.c_str(), (*ri).second.c_str());
             exreplace(*ri, text);
             ri++;
         break;
         case 'P':
-            printf("%s\n", (*pi).first.c_str());
+            printf("%s transformed to properties.\n", (*pi).first.c_str());
             expropers(*pi, text, cd);
             pi++;
         break;
@@ -2761,10 +2755,9 @@ int main(int argc, char** argv)
 			tlist[ptype] = pcode;
 		}
                 plistfile.close();
-		pair<string,map<string, string> > ruleset;
-		ruleset.first = token;
-                ruleset.second = tlist;
-		pall.push_back(ruleset);
+
+                pall.push_back(pair<string,map<string, string> >(token, tlist));
+
                 break;
             }
 

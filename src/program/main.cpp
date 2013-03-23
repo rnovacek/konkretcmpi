@@ -2733,7 +2733,7 @@ int main(int argc, char** argv)
                     err("Property replacement token %s too long. only 7 supported", token.c_str());
                 }
 
-                ifstream pmap(pfilename.c_str(), ios::in|ios::ate|ios::binary);
+                ifstream pmap(pfilename.c_str(), ios::in|ios::binary);
                 if (!pmap) {
                     err("Property replacement file %s missing or unreadable.", pfilename.c_str());
                 } else {

@@ -2246,6 +2246,10 @@ static void expropers_decls(string &chunk, map<string,string> prules, const MOF_
             }
 
             // XXX may need to extend by property name, class name, subclass name, superclass name rules
+            printf("Lookup %s\n", type.c_str());
+            for (map<string,string>::iterator pi = prules.begin(); pi!=prules.end(); pi++) {
+                printf("  among %s\n", (*pi).first.c_str());
+            }
             if (prules.find(type) != prules.end()) {
                 // type has mapping rule
                 append = prules[type];

@@ -2737,7 +2737,7 @@ int main(int argc, char** argv)
                 if (!pmap) {
                     err("Property replacement file %s missing or unreadable.", pfilename.c_str());
                 } else {
-                    printf("Processing %s\n", pfilename);
+                    printf("Processing %s\n", pfilename.c_str());
                 }
 
 		string line;

@@ -2271,7 +2271,7 @@ static void expropers_decls(string &chunk, map<string,string> prules, const MOF_
     return;
 }
 
-static void expropers_recursive(string &chunk, map<string,string> prules, const MOF_Class_Decl* cd)
+static void expropers_recursive(string &chunk, const map<string,string> prules, const MOF_Class_Decl* cd)
 {
     if (cd->super_class) {
         expropers_recursive(chunk, prules, cd->super_class);
@@ -2281,7 +2281,7 @@ static void expropers_recursive(string &chunk, map<string,string> prules, const 
     return;
 }
 
-static void expropers(pair<string,map<string,string> > pset, string &text, const MOF_Class_Decl* cd)
+static void expropers(string &text, const pair<string,map<string,string> > pset, const MOF_Class_Decl* cd)
 {
     printf("Property pattern %s\n",pset.first.c_str());
     string chunk;
@@ -2291,7 +2291,7 @@ static void expropers(pair<string,map<string,string> > pset, string &text, const
     return;
 }
 
-static void exreplace(pair<string,string> rrule, string &text)
+static void exreplace(string &text, const pair<string,string> rrule)
 {
     ifstream rchunk(rrule.second.c_str(), ios::in|ios::ate|ios::binary);
     if (!rchunk) {
@@ -2319,12 +2319,12 @@ static void transform(string &text, const MOF_Class_Decl* cd)
         switch (*t) {
         case 'R':
             printf("%s replaced for %s\n", (*ri).first.c_str(), (*ri).second.c_str());
-            exreplace(*ri, text);
+            exreplace(text, *ri);
             ri++;
         break;
         case 'P':
             printf("%s transformed to properties.\n", (*pi).first.c_str());
-            expropers(*pi, text, cd);
+            expropers(text, *pi, cd);
             pi++;
         break;
         }
@@ -2757,6 +2757,7 @@ int main(int argc, char** argv)
 			codefile.close();
 			string pcode = extemplate(pfile.c_str());
 			tlist[ptype] = pcode;
+                        printf("Property type %s for %s\n", ptype.c_str(), pcode.c_str());
 		}
                 plistfile.close();
 

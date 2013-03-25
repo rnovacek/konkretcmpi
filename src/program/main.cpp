@@ -2728,11 +2728,6 @@ int main(int argc, char** argv)
                     err("Invalid -P option %s. Use -P PATTERN=FILENAME", optarg);
                 }
 
-                if (token.size() > 7)
-                {
-                    err("Property replacement token %s too long. only 7 supported", token.c_str());
-                }
-
                 ifstream pmap(pfilename.c_str(), ios::in|ios::binary);
                 if (!pmap) {
                     err("Property replacement file %s missing or unreadable.", pfilename.c_str());
@@ -2774,21 +2769,12 @@ int main(int argc, char** argv)
 
                 if (tmpfile.size() == 0)
                 {
-                    err("invalid file name");
-                    exit(1);
-                }
-
-                if (tmpstr.size() > 7)
-                {
-                    err("too long string to replace. only 7 supported");
-                    exit(1);
+                    err("Invalid -P option %s. Use -P PATTERN=FILENAME", optarg);
                 }
 
                 ifstream ifile(tmpfile.c_str(), ios::in|ios::ate|ios::binary);
                 if (!ifile) {
-                    err("the replacement file either does not exist or is not readable");
-                    err(tmpfile.c_str());
-                    exit(1);
+                    err("Replacement file %s missing or unreadable.", tmpfile.c_str());
                 }
                 ifile.close();
 

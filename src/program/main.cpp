@@ -55,6 +55,7 @@ vector<pair<string,string> > rall;
 vector<pair<string,map<string,string> > > pall;
 
 string eta, eti, etn;
+string ofile;
 
 static void err(const char* format, ...)
 {
@@ -2340,7 +2341,11 @@ static void gen_provider(const MOF_Class_Decl* cd)
     // Form source file name
 
     char path[1024];
-    sprintf(path, "%sProvider.c", sn);
+    if (ofile.length()<=0) {
+        sprintf(path, "%sProvider.c", sn);
+    } else {
+        sprintf(path, "%s", ofile.c_str());
+    }
 
     if ((os = fopen(path, "r")))
     {
@@ -2635,6 +2640,7 @@ int main(int argc, char** argv)
         "  -v          Print the version\n"
         "  -s CLASS    Write provider skeleton for CLASS to <ALIAS>Provider.c\n"
         "              (or use CLASS=ALIAS! form instead).\n"
+        "  -o FILE     Write main skeleton to custom FILE.\n"
         "  -f FILE     Read CLASS=ALIAS[!] argumetns the given file.\n"
         "  -h          Print this help message\n"
         "  -a FILE     Template for association provider\n"
@@ -2710,10 +2716,15 @@ int main(int argc, char** argv)
 
     vector<string> args;
 
-    for (int opt; (opt = getopt(argc, argv, "P:R:I:m:vhs:pf:a:c:n:")) != -1; )
+    for (int opt; (opt = getopt(argc, argv, "P:R:I:m:vhs:pf:a:c:n:o:")) != -1; )
     {
         switch (opt)
         {
+            case 'o':
+            {
+                ofile = string(optarg);
+                break;
+            }
             case 'P':
             {
                 torder.push_back('P');

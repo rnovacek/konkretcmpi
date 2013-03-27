@@ -2612,8 +2612,7 @@ string extemplate(const char *filename)
 {
     ifstream pt(filename, ios::in|ios::ate|ios::binary);
     if (!pt) {
-        err("problem opening file");
-        exit(1);
+        err("problem opening file %s", filename);
     }
     streampos length = pt.tellg();
     pt.seekg(0,ios::beg);

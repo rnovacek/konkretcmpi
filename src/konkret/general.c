@@ -423,10 +423,10 @@ CMPIStatus KBase_SetToArgs(
 
             cd = _data(value, pos.tag);
 
-            if ((pos.tag & KTAG_IN) && !in)
-                break;;
+            if (in && !(pos.tag & KTAG_IN))
+                break;
 
-            if ((pos.tag & KTAG_OUT) && !out)
+            if (out && !(pos.tag & KTAG_OUT))
                 break;
 
             if (value->null)
@@ -858,10 +858,10 @@ CMPIStatus KBase_FromArgs(
 
         if ((kv = _find_property(self, KChars(name), &tag)))
         {
-            if ((tag & KTAG_IN) && !in)
+            if (in && !(pos.tag & KTAG_IN))
                 continue;
 
-            if ((tag & KTAG_OUT) && !out)
+            if (out && !(pos.tag & KTAG_OUT))
                 continue;
 
             _set_value(kv, tag, &cd);

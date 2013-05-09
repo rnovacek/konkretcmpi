@@ -2887,6 +2887,7 @@ int main(int argc, char** argv)
                 break; 
             case 'k':
                 around = true;
+                break;
 
             default:
                 err("invalid option: %c; try -h for help", opt);

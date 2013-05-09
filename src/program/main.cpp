@@ -57,6 +57,8 @@ vector<pair<string,map<string,string> > > pall;
 string eta, eti, etn;
 string ofile;
 
+bool around = false;
+
 static void err(const char* format, ...)
 {
     fputc('\n', stderr);
@@ -849,8 +851,14 @@ static void gen_meth_header(
 
     const char TRAILER[] =
         "    CMPIStatus* status)";
+    const char TRAILER_AROUND[] =
+        "    CMPIStatus* __status)";
+  
 
-    put(os, TRAILER, sn, mn, NULL);
+    if (around)
+        put(os, TRAILER_AROUND, sn, mn, NULL);
+    else
+        put(os, TRAILER, sn, mn, NULL);
 
     if (prototype)
         put(os, ";\n\n", NULL);
@@ -889,8 +897,19 @@ static void gen_meth_stub(
         "    return result;\n"
         "}\n"
         "\n";
+    const char BODY_AROUND[] =
+        "{\n"
+        "    $0 result = $1_INIT;\n"
+        "\n"
+        "    KSetStatus(__status, ERR_NOT_SUPPORTED);\n"
+        "    return result;\n"
+        "}\n"
+        "\n";
 
-    put(os, BODY, ktn, to_upper(buf, ktn), NULL);
+    if (around)
+        put(os, BODY_AROUND, ktn, to_upper(buf, ktn), NULL);
+    else
+        put(os, BODY, ktn, to_upper(buf, ktn), NULL);
 }
 
 static void gen_meth_call(
@@ -2715,7 +2734,7 @@ int main(int argc, char** argv)
 
     vector<string> args;
 
-    for (int opt; (opt = getopt(argc, argv, "P:R:I:m:vhs:pf:a:c:n:o:")) != -1; )
+    for (int opt; (opt = getopt(argc, argv, "P:R:I:m:vhs:pf:a:c:n:o:k")) != -1; )
     {
         switch (opt)
         {
@@ -2745,22 +2764,22 @@ int main(int argc, char** argv)
                     printf("Processing %s\n", pfilename.c_str());
                 }
 
-		string line;
-		map <string,string> tlist;
-		while (getline(pmap, line)) {
+                string line;
+                map <string,string> tlist;
+                while (getline(pmap, line)) {
                         printf("-P line: %s\n", line.c_str());
-			string ptype = line.substr(0, line.find('='));
-			string pfile = line.substr(line.find('=') + 1);
+                        string ptype = line.substr(0, line.find('='));
+                        string pfile = line.substr(line.find('=') + 1);
 
-			ifstream codefile(pfile.c_str(), ios::in|ios::ate|ios::binary);
-			if (!codefile) {
-				err("Property type %s replacement file %s missing or unreadable.", ptype.c_str(), pfile.c_str());
-			}
-			codefile.close();
-			string pcode = extemplate(pfile.c_str());
-			tlist[ptype] = pcode;
+                        ifstream codefile(pfile.c_str(), ios::in|ios::ate|ios::binary);
+                        if (!codefile) {
+                                err("Property type %s replacement file %s missing or unreadable.", ptype.c_str(), pfile.c_str());
+                        }
+                        codefile.close();
+                        string pcode = extemplate(pfile.c_str());
+                        tlist[ptype] = pcode;
                         printf("Property type %s for %s\n", ptype.c_str(), pcode.c_str());
-		}
+                }
                 pmap.close();
 
                 pall.push_back(pair<string,map<string, string> >(token, tlist));
@@ -2866,6 +2885,8 @@ int main(int argc, char** argv)
             case 'n':
                 etn = extemplate(optarg);
                 break; 
+            case 'k':
+                around = true;
 
             default:
                 err("invalid option: %c; try -h for help", opt);

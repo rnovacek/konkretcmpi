@@ -968,9 +968,9 @@ static void gen_meth_stub(
         "\n";
 
     if (around)
-        put(os, BODY_AROUND, ktn, to_upper(buf, ktn), NULL);
+        put(os, BODY_LEAD_AROUND, ktn, to_upper(buf, ktn), NULL);
     else
-        put(os, BODY, ktn, to_upper(buf, ktn), NULL);
+        put(os, BODY_LEAD, ktn, to_upper(buf, ktn), NULL);
 
     exmethod(os, cd, md);
 
@@ -986,9 +986,9 @@ static void gen_meth_stub(
         "\n";
 
     if (around)
-        put(os, BODY_AROUND, ktn, to_upper(buf, ktn), NULL);
+        put(os, BODY_OUT_AROUND, ktn, to_upper(buf, ktn), NULL);
     else
-        put(os, BODY, ktn, to_upper(buf, ktn), NULL);
+        put(os, BODY_OUT, ktn, to_upper(buf, ktn), NULL);
 
 }
 

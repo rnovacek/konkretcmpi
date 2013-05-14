@@ -957,20 +957,29 @@ static void gen_meth_stub(
 
     gen_meth_header(os, cd, md, false);
 
-    exmethod(os, cd, md);
     // $0=ktn $0=ktnu
-    const char BODY[] =
+    const char BODY_LEAD[] =
         "{\n"
         "    $0 result = $1_INIT;\n"
-        "\n"
+        "\n";
+    const char BODY_LEAD_AROUND[] =
+        "{\n"
+        "    $0 result = $1_INIT;\n"
+        "\n";
+
+    if (around)
+        put(os, BODY_AROUND, ktn, to_upper(buf, ktn), NULL);
+    else
+        put(os, BODY, ktn, to_upper(buf, ktn), NULL);
+
+    exmethod(os, cd, md);
+
+    const char BODY_OUT[] =
         "    KSetStatus(status, ERR_NOT_SUPPORTED);\n"
         "    return result;\n"
         "}\n"
         "\n";
-    const char BODY_AROUND[] =
-        "{\n"
-        "    $0 result = $1_INIT;\n"
-        "\n"
+    const char BODY_OUT_AROUND[] =
         "    KSetStatus(__status, ERR_NOT_SUPPORTED);\n"
         "    return result;\n"
         "}\n"
@@ -980,6 +989,7 @@ static void gen_meth_stub(
         put(os, BODY_AROUND, ktn, to_upper(buf, ktn), NULL);
     else
         put(os, BODY, ktn, to_upper(buf, ktn), NULL);
+
 }
 
 static void gen_meth_call(

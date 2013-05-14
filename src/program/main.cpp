@@ -934,7 +934,7 @@ static void exmethod(FILE* os, const MOF_Class_Decl* cd, const MOF_Method_Decl* 
                 substitute(append, "<MTYPE>", type);
                 substitute(append, "<MNAME>", name);
                 printf("\nTransformed method appendix %s\n", append.c_str());
-                put(os, append.c_str());
+                put(os, append.c_str(), NULL);
 
             }
 

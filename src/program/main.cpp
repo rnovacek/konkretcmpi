@@ -1,3 +1,4 @@
+/* ex: set tabstop=4 expandtab: */
 /*
 **==============================================================================
 **
@@ -53,11 +54,23 @@ vector<string> aliases;
 vector<char> torder;
 vector<pair<string,string> > rall;
 vector<pair<string,map<string,string> > > pall;
+vector<map<string,string> > mall;
 
 string eta, eti, etn;
 string ofile;
 
 bool around = false;
+
+static void substitute(
+    string& text, 
+    const string& pattern, 
+    const string& replacement)
+{
+    size_t pos;
+
+    while ((pos = text.find(pattern)) != size_t(-1))
+        text = text.substr(0, pos) + string(replacement) + text.substr(pos + strlen(pattern.c_str()));
+}
 
 static void err(const char* format, ...)
 {
@@ -878,6 +891,62 @@ static const char* to_upper(char* buf, const char* s)
     return buf;
 }
 
+static void exmethod(FILE* os, const MOF_Class_Decl* cd, const MOF_Method_Decl* md)
+{
+
+    string append;
+/*    if (md->qual_mask & MOF_QT_STATIC)
+        put(os, STATIC_HEADER, sn, mn, ktn, NULL);
+    else
+        put(os, HEADER, sn, mn, ktn, NULL);
+*/
+    for (MOF_Parameter* p = md->parameters; p; p = (MOF_Parameter*)p->next)
+    {
+/*        const char* mod = (p->qual_mask & MOF_QT_OUT) ? "" : "const ";*/
+
+        string type;
+        string name;
+        if (p->data_type == TOK_REF)
+        {
+            if (p->array_index)
+                type = string("KrefA");
+            else
+       
+                type = string("Kref");
+        }
+        else
+        {
+            const char* ktn = _ktype_name(p->data_type);
+
+            if (p->array_index)
+                type = string(ktn)+string("A"); /* p->name */
+            else
+                type = string(ktn);
+        }
+        name = p->name;
+
+        for (vector<map<string,string> >::iterator mi = mall.begin(); mi != mall.end(); mi++)
+        {
+            map<string,string> mrules = (*mi);
+            if (mrules.find(type) != mrules.end()){
+                append = mrules[type];
+                printf("\nTo be appended to method %s\n", append.c_str());
+                substitute(append, "<MTYPE>", type);
+                substitute(append, "<MNAME>", name);
+                printf("\nTransformed method appendix %s\n", append.c_str());
+                put(os, append.c_str());
+
+            }
+
+        }
+        
+    }
+
+
+    return;
+
+}
+
 static void gen_meth_stub(
     FILE* os, 
     const MOF_Class_Decl* cd, 
@@ -888,6 +957,7 @@ static void gen_meth_stub(
 
     gen_meth_header(os, cd, md, false);
 
+    exmethod(os, cd, md);
     // $0=ktn $0=ktnu
     const char BODY[] =
         "{\n"
@@ -1820,17 +1890,6 @@ static void gen_features(
     }
 }
 
-static void substitute(
-    string& text, 
-    const string& pattern, 
-    const string& replacement)
-{
-    size_t pos;
-
-    while ((pos = text.find(pattern)) != size_t(-1))
-        text = text.substr(0, pos) + string(replacement) + text.substr(pos + strlen(pattern.c_str()));
-}
-
 const char INSTANCE_PROVIDER[] =
     "#include <konkret/konkret.h>\n"
     "#include \"<ALIAS>.h\"\n"
@@ -2329,7 +2388,6 @@ static void exreplace(string &text, const pair<string,string> rrule)
     return;
 }
 
-
 static void transform(string &text, const MOF_Class_Decl* cd)
 {
     
@@ -2653,6 +2711,7 @@ int main(int argc, char** argv)
         "OPTIONS:\n"
         "  -P STR=FILE Replace STR with properties. With property rules in FILE\n"
         "  -R STR=FILE Replace STR for contents of FILE\n"
+        "  -M FILE     Method argument type processing rules in FILE\n"
         "  -I DIR      Search for included MOF files in this directory\n"
         "  -m FILE     Add MOF file to list of MOFs to parse\n"
         "  -v          Print the version\n"
@@ -2734,7 +2793,7 @@ int main(int argc, char** argv)
 
     vector<string> args;
 
-    for (int opt; (opt = getopt(argc, argv, "P:R:I:m:vhs:pf:a:c:n:o:k")) != -1; )
+    for (int opt; (opt = getopt(argc, argv, "P:R:I:m:vhs:pf:a:c:n:o:kM:")) != -1; )
     {
         switch (opt)
         {
@@ -2811,6 +2870,47 @@ int main(int argc, char** argv)
                 
                 break;
             }
+
+            case 'M':
+            {
+                string mfilename;
+                mfilename.assign(optarg);
+                
+                if (mfilename.size() == 0)
+                {
+                    err("Invalid -M option %s. Use -M FILENAME", optarg);
+                }
+
+                ifstream imamap(mfilename.c_str(), ios::in|ios::binary);
+                if (!imamap) {
+                    err("Method argument replacement file %s missing or unreadable.", mfilename.c_str());
+                } else {
+                    printf("Processing %s\n", mfilename.c_str());
+                }
+
+                string line;
+                map <string,string> tlist;
+                while (getline(imamap, line)) {
+                        printf("-M line: %s\n", line.c_str());
+                        string mtype = line.substr(0, line.find('='));
+                        string mfile = line.substr(line.find('=') + 1);
+
+                        ifstream codefile(mfile.c_str(), ios::in|ios::ate|ios::binary);
+                        if (!codefile) {
+                                err("Method argument type %s replacement file %s missing or unreadable.", mtype.c_str(), mfile.c_str());
+                        }
+                        codefile.close();
+                        string mcode = extemplate(mfile.c_str());
+                        tlist[mtype] = mcode;
+                        printf("Method argument type %s for %s\n", mtype.c_str(), mcode.c_str());
+                }
+                imamap.close();
+
+                mall.push_back(map<string, string>(tlist));
+
+                break;
+            }
+
             case 'I':
             {
                 if (MOF_num_include_paths == MAX_INCLUDES)

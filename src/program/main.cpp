@@ -1,3 +1,4 @@
+/* ex: set tabstop=4 expandtab: */
 /*
 **==============================================================================
 **
@@ -41,6 +42,7 @@
 #include <cassert>
 #include <fstream>
 #include <unistd.h>
+#include <memory>
 
 using namespace std;
 
@@ -48,7 +50,27 @@ static const char* arg0;
 static vector<string> skeletons;
 vector<string> classnames;
 vector<string> aliases;
+
+vector<char> torder;
+vector<pair<string,string> > rall;
+vector<pair<string,map<string,string> > > pall;
+vector<map<string,string> > mall;
+
 string eta, eti, etn;
+string ofile;
+
+bool around = false;
+
+static void substitute(
+    string& text, 
+    const string& pattern, 
+    const string& replacement)
+{
+    size_t pos;
+
+    while ((pos = text.find(pattern)) != size_t(-1))
+        text = text.substr(0, pos) + string(replacement) + text.substr(pos + strlen(pattern.c_str()));
+}
 
 static void err(const char* format, ...)
 {
@@ -842,8 +864,14 @@ static void gen_meth_header(
 
     const char TRAILER[] =
         "    CMPIStatus* status)";
+    const char TRAILER_AROUND[] =
+        "    CMPIStatus* __status)";
+  
 
-    put(os, TRAILER, sn, mn, NULL);
+    if (around)
+        put(os, TRAILER_AROUND, sn, mn, NULL);
+    else
+        put(os, TRAILER, sn, mn, NULL);
 
     if (prototype)
         put(os, ";\n\n", NULL);
@@ -863,6 +891,62 @@ static const char* to_upper(char* buf, const char* s)
     return buf;
 }
 
+static void exmethod(FILE* os, const MOF_Class_Decl* cd, const MOF_Method_Decl* md)
+{
+
+    string append;
+/*    if (md->qual_mask & MOF_QT_STATIC)
+        put(os, STATIC_HEADER, sn, mn, ktn, NULL);
+    else
+        put(os, HEADER, sn, mn, ktn, NULL);
+*/
+    for (MOF_Parameter* p = md->parameters; p; p = (MOF_Parameter*)p->next)
+    {
+/*        const char* mod = (p->qual_mask & MOF_QT_OUT) ? "" : "const ";*/
+
+        string type;
+        string name;
+        if (p->data_type == TOK_REF)
+        {
+            if (p->array_index)
+                type = string("KrefA");
+            else
+       
+                type = string("Kref");
+        }
+        else
+        {
+            const char* ktn = _ktype_name(p->data_type);
+
+            if (p->array_index)
+                type = string(ktn)+string("A"); /* p->name */
+            else
+                type = string(ktn);
+        }
+        name = p->name;
+
+        for (vector<map<string,string> >::iterator mi = mall.begin(); mi != mall.end(); mi++)
+        {
+            map<string,string> mrules = (*mi);
+            if (mrules.find(type) != mrules.end()){
+                append = mrules[type];
+                printf("\nTo be appended to method %s\n", append.c_str());
+                substitute(append, "<MTYPE>", type);
+                substitute(append, "<MNAME>", name);
+                printf("\nTransformed method appendix %s\n", append.c_str());
+                put(os, append.c_str(), NULL);
+
+            }
+
+        }
+        
+    }
+
+
+    return;
+
+}
+
 static void gen_meth_stub(
     FILE* os, 
     const MOF_Class_Decl* cd, 
@@ -874,16 +958,38 @@ static void gen_meth_stub(
     gen_meth_header(os, cd, md, false);
 
     // $0=ktn $0=ktnu
-    const char BODY[] =
+    const char BODY_LEAD[] =
         "{\n"
         "    $0 result = $1_INIT;\n"
-        "\n"
+        "\n";
+    const char BODY_LEAD_AROUND[] =
+        "{\n"
+        "    $0 result = $1_INIT;\n"
+        "\n";
+
+    if (around)
+        put(os, BODY_LEAD_AROUND, ktn, to_upper(buf, ktn), NULL);
+    else
+        put(os, BODY_LEAD, ktn, to_upper(buf, ktn), NULL);
+
+    exmethod(os, cd, md);
+
+    const char BODY_OUT[] =
         "    KSetStatus(status, ERR_NOT_SUPPORTED);\n"
         "    return result;\n"
         "}\n"
         "\n";
+    const char BODY_OUT_AROUND[] =
+        "    KSetStatus(__status, ERR_NOT_SUPPORTED);\n"
+        "    return result;\n"
+        "}\n"
+        "\n";
 
-    put(os, BODY, ktn, to_upper(buf, ktn), NULL);
+    if (around)
+        put(os, BODY_OUT_AROUND, ktn, to_upper(buf, ktn), NULL);
+    else
+        put(os, BODY_OUT, ktn, to_upper(buf, ktn), NULL);
+
 }
 
 static void gen_meth_call(
@@ -1794,17 +1900,6 @@ static void gen_features(
     }
 }
 
-static void substitute(
-    string& text, 
-    const string& pattern, 
-    const string& replacement)
-{
-    size_t pos;
-
-    while ((pos = text.find(pattern)) != size_t(-1))
-        text = text.substr(0, pos) + string(replacement) + text.substr(pos + 7);
-}
-
 const char INSTANCE_PROVIDER[] =
     "#include <konkret/konkret.h>\n"
     "#include \"<ALIAS>.h\"\n"
@@ -2207,6 +2302,124 @@ const char INDICATION_PROVIDER[] =
     "    _cb, \n"
     "    <ALIAS>Initialize())\n";
 
+
+static void expropers_decls(string &chunk, map<string,string> prules, const MOF_Class_Decl* cd)
+{
+    string append;
+
+    printf("Properties of %s\n", cd->name);
+    for (MOF_Feature_Info* p = cd->all_features; p;
+        p = (MOF_Feature_Info*)p->next)
+    {
+        MOF_Feature* mf = p->feature;
+
+        if (strcasecmp(cd->name, p->class_origin->name) != 0)
+            continue;
+
+        // CIM_Class_Property:
+
+        MOF_Property_Decl* pd = dynamic_cast<MOF_Property_Decl*>(mf);
+
+        if (pd)
+        {
+            const char* pn = pd->name;
+            const char* ktn = _ktype_name(pd->data_type);
+            
+            string type;
+            if (pd->array_index == 0) {
+                // is not array
+                type = string(_ktype_name(pd->data_type));
+            } else {
+                // is array
+                type = string(_ktype_name(pd->data_type))+string("A");
+            }
+
+            // XXX may need to extend by property name, class name, subclass name, superclass name rules
+            printf("Lookup %s\n", type.c_str());
+            for (map<string,string>::iterator pi = prules.begin(); pi!=prules.end(); pi++) {
+                printf("  among %s\n", (*pi).first.c_str());
+            }
+            if (prules.find(type) != prules.end()) {
+                // type has mapping rule
+                append = prules[type];
+                printf("\nTo be appended %s\n", append.c_str());
+                substitute(append, "<PTYPE>", type);
+                substitute(append, "<PNAME>", pd->name);
+                printf("\nTransformed appendix %s\n", append.c_str());
+                chunk+=append;
+                printf("\nMerged chunk %s\n", chunk.c_str());
+            }
+
+            if (pd->array_index == 0) {
+                printf("    const %s %s;\n", ktn, pn);
+            } else {
+                printf("    const %sA %s;\n", ktn, pn);
+           }
+        }
+    }
+    return;
+}
+
+static void expropers_recursive(string &chunk, const map<string,string> prules, const MOF_Class_Decl* cd)
+{
+    if (cd->super_class) {
+        expropers_recursive(chunk, prules, cd->super_class);
+        printf("Nested chunk =======\n%s=======\n", chunk.c_str());
+    }
+    expropers_decls(chunk, prules, cd);
+    return;
+}
+
+static void expropers(string &text, const pair<string,map<string,string> > pset, const MOF_Class_Decl* cd)
+{
+    printf("Property pattern %s\n",pset.first.c_str());
+    string chunk;
+    expropers_recursive(chunk, pset.second, cd);
+    printf("Finished properties ==========\n%s==========\n", chunk.c_str());
+    substitute(text, pset.first, chunk);
+    return;
+}
+
+static void exreplace(string &text, const pair<string,string> rrule)
+{
+    ifstream rchunk(rrule.second.c_str(), ios::in|ios::ate|ios::binary);
+    if (!rchunk) {
+        err("problem opening file %s", rrule.first.c_str());
+    }
+    streampos length = rchunk.tellg();
+    rchunk.seekg(0,ios::beg);
+
+    string templ;
+    templ.reserve(length);
+    templ.assign(istreambuf_iterator<char>(rchunk),istreambuf_iterator<char>());
+
+    rchunk.close();
+    substitute(text, rrule.first.c_str(), templ);
+    return;
+}
+
+static void transform(string &text, const MOF_Class_Decl* cd)
+{
+    
+    vector<pair<string,string> >::iterator ri = rall.begin();
+    vector<pair<string,map<string,string> > >::iterator pi = pall.begin();
+    for (vector<char>::iterator t = torder.begin(); t != torder.end(); t++) {
+        switch (*t) {
+        case 'R':
+            printf("%s replaced for %s\n", (*ri).first.c_str(), (*ri).second.c_str());
+            exreplace(text, *ri);
+            ri++;
+        break;
+        case 'P':
+            printf("%s transformed to properties.\n", (*pi).first.c_str());
+            expropers(text, *pi, cd);
+            pi++;
+        break;
+        }
+    }
+    return;
+}
+
 static void gen_provider(const MOF_Class_Decl* cd)
 {
     const char* sn = alias(cd->name);
@@ -2215,7 +2428,11 @@ static void gen_provider(const MOF_Class_Decl* cd)
     // Form source file name
 
     char path[1024];
-    sprintf(path, "%sProvider.c", sn);
+    if (ofile.length()<=0) {
+        sprintf(path, "%sProvider.c", sn);
+    } else {
+        sprintf(path, "%s", ofile.c_str());
+    }
 
     if ((os = fopen(path, "r")))
     {
@@ -2243,6 +2460,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = eta;
         }
+        transform(text, cd);
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2257,6 +2475,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = etn;
         }
+        transform(text, cd);
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2271,6 +2490,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = eti;
         }
+        transform(text, cd);
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2475,12 +2695,11 @@ static int _find_schema_mof(const char* path, string& schema_mof)
     return -1;
 }
 
-string extemplate(char *filename)
+string extemplate(const char *filename)
 {
     ifstream pt(filename, ios::in|ios::ate|ios::binary);
     if (!pt) {
-        err("problem opening file");
-        exit(1);
+        err("problem opening file %s", filename);
     }
     streampos length = pt.tellg();
     pt.seekg(0,ios::beg);
@@ -2500,11 +2719,15 @@ int main(int argc, char** argv)
         "Usage: %s [OPTIONS] CLASS=ALIAS[!]...\n"
         "\n"
         "OPTIONS:\n"
+        "  -P STR=FILE Replace STR with properties. With property rules in FILE\n"
+        "  -R STR=FILE Replace STR for contents of FILE\n"
+        "  -M FILE     Method argument type processing rules in FILE\n"
         "  -I DIR      Search for included MOF files in this directory\n"
         "  -m FILE     Add MOF file to list of MOFs to parse\n"
         "  -v          Print the version\n"
         "  -s CLASS    Write provider skeleton for CLASS to <ALIAS>Provider.c\n"
         "              (or use CLASS=ALIAS! form instead).\n"
+        "  -o FILE     Write main skeleton to custom FILE.\n"
         "  -f FILE     Read CLASS=ALIAS[!] argumetns the given file.\n"
         "  -h          Print this help message\n"
         "  -a FILE     Template for association provider\n"
@@ -2580,10 +2803,124 @@ int main(int argc, char** argv)
 
     vector<string> args;
 
-    for (int opt; (opt = getopt(argc, argv, "I:m:vhs:pf:a:c:n:")) != -1; )
+    for (int opt; (opt = getopt(argc, argv, "P:R:I:m:vhs:pf:a:c:n:o:kM:")) != -1; )
     {
         switch (opt)
         {
+            case 'o':
+            {
+                ofile = string(optarg);
+                break;
+            }
+            case 'P':
+            {
+                torder.push_back('P');
+                string replace;
+                replace.assign(optarg);
+                
+                string token = replace.substr(0, replace.find('='));
+                string pfilename = replace.substr(replace.find('=') + 1);
+
+                if (pfilename.size() == 0)
+                {
+                    err("Invalid -P option %s. Use -P PATTERN=FILENAME", optarg);
+                }
+
+                ifstream pmap(pfilename.c_str(), ios::in|ios::binary);
+                if (!pmap) {
+                    err("Property replacement file %s missing or unreadable.", pfilename.c_str());
+                } else {
+                    printf("Processing %s\n", pfilename.c_str());
+                }
+
+                string line;
+                map <string,string> tlist;
+                while (getline(pmap, line)) {
+                        printf("-P line: %s\n", line.c_str());
+                        string ptype = line.substr(0, line.find('='));
+                        string pfile = line.substr(line.find('=') + 1);
+
+                        ifstream codefile(pfile.c_str(), ios::in|ios::ate|ios::binary);
+                        if (!codefile) {
+                                err("Property type %s replacement file %s missing or unreadable.", ptype.c_str(), pfile.c_str());
+                        }
+                        codefile.close();
+                        string pcode = extemplate(pfile.c_str());
+                        tlist[ptype] = pcode;
+                        printf("Property type %s for %s\n", ptype.c_str(), pcode.c_str());
+                }
+                pmap.close();
+
+                pall.push_back(pair<string,map<string, string> >(token, tlist));
+
+                break;
+            }
+
+            case 'R':
+            {
+                torder.push_back('R');
+                string replace;
+                replace.assign(optarg);
+                
+                string tmpstr = replace.substr(0, replace.find('='));
+                string tmpfile = replace.substr(replace.find('=') + 1);
+
+                if (tmpfile.size() == 0)
+                {
+                    err("Invalid -P option %s. Use -P PATTERN=FILENAME", optarg);
+                }
+
+                ifstream ifile(tmpfile.c_str(), ios::in|ios::ate|ios::binary);
+                if (!ifile) {
+                    err("Replacement file %s missing or unreadable.", tmpfile.c_str());
+                }
+                ifile.close();
+
+                rall.push_back(pair<string,string>(tmpstr, tmpfile));
+                
+                break;
+            }
+
+            case 'M':
+            {
+                string mfilename;
+                mfilename.assign(optarg);
+                
+                if (mfilename.size() == 0)
+                {
+                    err("Invalid -M option %s. Use -M FILENAME", optarg);
+                }
+
+                ifstream imamap(mfilename.c_str(), ios::in|ios::binary);
+                if (!imamap) {
+                    err("Method argument replacement file %s missing or unreadable.", mfilename.c_str());
+                } else {
+                    printf("Processing %s\n", mfilename.c_str());
+                }
+
+                string line;
+                map <string,string> tlist;
+                while (getline(imamap, line)) {
+                        printf("-M line: %s\n", line.c_str());
+                        string mtype = line.substr(0, line.find('='));
+                        string mfile = line.substr(line.find('=') + 1);
+
+                        ifstream codefile(mfile.c_str(), ios::in|ios::ate|ios::binary);
+                        if (!codefile) {
+                                err("Method argument type %s replacement file %s missing or unreadable.", mtype.c_str(), mfile.c_str());
+                        }
+                        codefile.close();
+                        string mcode = extemplate(mfile.c_str());
+                        tlist[mtype] = mcode;
+                        printf("Method argument type %s for %s\n", mtype.c_str(), mcode.c_str());
+                }
+                imamap.close();
+
+                mall.push_back(map<string, string>(tlist));
+
+                break;
+            }
+
             case 'I':
             {
                 if (MOF_num_include_paths == MAX_INCLUDES)
@@ -2658,6 +2995,9 @@ int main(int argc, char** argv)
             case 'n':
                 etn = extemplate(optarg);
                 break; 
+            case 'k':
+                around = true;
+                break;
 
             default:
                 err("invalid option: %c; try -h for help", opt);

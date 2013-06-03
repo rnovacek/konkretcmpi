@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <cmpidt.h>
 #include <cmpift.h>
@@ -203,12 +204,21 @@ KINLINE void KPutStatus(CMPIStatus* st)
 KINLINE CMPIStatus __KReturn2(
     const CMPIBroker* cb, 
     CMPIrc rc,
-    const char* msg)
+    const char* format,
+    ...)
 {
-    CMReturnWithChars(cb, rc, msg);
+    va_list args;
+    char* str = NULL;
+    va_start(args, format);
+    vasprintf(&str, format, args);
+    va_end(args);
+    CMPIStatus stat={(rc),NULL};
+    stat.msg=cb->eft->newString(cb, str, NULL);
+    free(str);
+    return stat;
 }
 
-#define KReturn2(CB, CODE, MSG) return __KReturn2(CB, CMPI_RC_##CODE, MSG)
+#define KReturn2(CB, CODE, MSG, ...) return __KReturn2(CB, CMPI_RC_##CODE, MSG, ##__VA_ARGS__)
 
 /*
 **==============================================================================

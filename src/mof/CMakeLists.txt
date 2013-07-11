@@ -38,7 +38,8 @@ set(konkretmof_SRCS
 
 add_library(konkretmof SHARED ${konkretmof_SRCS})
 
-set_target_properties(konkretmof PROPERTIES SOVERSION 0.0.1)
+set_target_properties(konkretmof PROPERTIES VERSION 0.0.1)
+set_target_properties(konkretmof PROPERTIES SOVERSION 0)
 
 install(TARGETS konkretmof DESTINATION lib${LIB_SUFFIX})
 

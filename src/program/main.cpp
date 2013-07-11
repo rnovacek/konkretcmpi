@@ -299,6 +299,8 @@ static const char* _ctype_name(int data_type)
             return "CMPIString*";
         case TOK_DATETIME:
             return "CMPIDateTime*";
+        case TOK_INSTANCE:
+            return "CMPIInstance*";
     }
 
     // Unreachable
@@ -340,6 +342,8 @@ static const char* _ktype_name(int data_type)
             return "KDateTime";
         case TOK_REF:
             return "KRef";
+        case TOK_INSTANCE:
+            return "KInstance";
     }
 
     // Unreachable
@@ -402,6 +406,9 @@ static KTag _ktag(
             break;
         case TOK_REF:
             tag = KTYPE_REFERENCE;
+            break;
+        case TOK_INSTANCE:
+            tag = KTYPE_INSTANCE;
             break;
     }
 
@@ -472,10 +479,19 @@ static void gen_feature_decls(
             if (ref && !key)
                 continue;
 
-            if (pd->array_index == 0)
-                put(os, "    const $0 $1;\n", ktn, pn, NULL);
+            if (pd->qualifiers->has_key("EmbeddedInstance")) {
+                if (pd->array_index)
+                    put(os, "    const KInstanceA $0;\n", pn, NULL);
+                else
+                    put(os, "    const KInstance $0;\n", pn, NULL);
+            }
             else
-                put(os, "    const $0A $1;\n", ktn, pn, NULL);
+            {
+                if (pd->array_index == 0)
+                    put(os, "    const $0 $1;\n", ktn, pn, NULL);
+                else
+                    put(os, "    const $0A $1;\n", ktn, pn, NULL);
+            }
 
             // Add sig entry [type][length][name][zero-terminator]
 
@@ -612,10 +628,19 @@ static void gen_param(FILE* os, MOF_Parameter* p, vector<unsigned char>& sig)
     {
         const char* ktn = _ktype_name(p->data_type);
 
-        if (p->array_index)
-            put(os, "    $0A $1;\n", ktn, p->name, NULL);
+        if (p->qualifiers->has_key("EmbeddedInstance")) {
+            if (p->array_index)
+                put(os, "    KInstanceA $0;\n", p->name, NULL);
+            else
+                put(os, "    KInstance $0;\n", p->name, NULL);
+        }
         else
-            put(os, "    $0 $1;\n", ktn, p->name, NULL);
+        {
+            if (p->array_index)
+                put(os, "    $0A $1;\n", ktn, p->name, NULL);
+            else
+                put(os, "    $0 $1;\n", ktn, p->name, NULL);
+        }
     }
 
     pack_tag(sig, tag);
@@ -854,11 +879,17 @@ static void gen_meth_header(
         else
         {
             const char* ktn = _ktype_name(p->data_type);
-
-            if (p->array_index)
-                put(os, "    $0$1A* $2,\n", mod, ktn, p->name, NULL);
-            else
-                put(os, "    $0$1* $2,\n", mod, ktn, p->name, NULL);
+            if (p->qualifiers->has_key("EmbeddedInstance")) {
+                if (p->array_index)
+                    put(os, "    $0KInstanceA* $1,\n", mod, p->name, NULL);
+                else
+                    put(os, "    $0KInstance* $1,\n", mod, p->name, NULL);
+            } else {
+                if (p->array_index)
+                    put(os, "    $0$1A* $2,\n", mod, ktn, p->name, NULL);
+                else
+                    put(os, "    $0$1* $2,\n", mod, ktn, p->name, NULL);
+            }
         }
     }
 

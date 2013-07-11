@@ -2238,7 +2238,7 @@ KINLINE CMPIBoolean KInstanceA_Init(
 {
     const unsigned char* sig = self ? self->__sig : NULL;
 
-    if (!KArray_Init((KArray*)self, cb, max, CMPI_ref))
+    if (!KArray_Init((KArray*)self, cb, max, CMPI_instance))
     {
         if (self)
             self->__sig = sig;
@@ -2264,11 +2264,11 @@ KINLINE void KInstanceA_InitNull(KInstanceA* self)
 KINLINE CMPIBoolean KInstanceA_Set(
     KInstanceA* self, 
     CMPICount i,
-    CMPIObjectPath* x)
+    CMPIInstance* x)
 {
     const unsigned char* sig = self ? self->__sig : NULL;
 
-    if (!KArray_Set((KArray*)self, i, &x, CMPI_ref))
+    if (!KArray_Set((KArray*)self, i, &x, CMPI_instance))
     {
         if (self)
             self->__sig = sig;
@@ -2285,7 +2285,7 @@ KINLINE CMPIBoolean KInstanceA_Null(KInstanceA* self, CMPICount i)
 {
     const unsigned char* sig = self ? self->__sig : NULL;
 
-    if (!KArray_Null((KArray*)self, i, CMPI_ref))
+    if (!KArray_Null((KArray*)self, i, CMPI_instance))
     {
         if (self)
             self->__sig = sig;
@@ -2303,7 +2303,7 @@ KINLINE KInstance KInstanceA_Get(KInstanceA* self, CMPICount i)
     const unsigned char* sig = self ? self->__sig : NULL;
     KInstance result;
 
-    KArray_Get((KArray*)self, i, CMPI_ref, (KValue*)&result);
+    KArray_Get((KArray*)self, i, CMPI_instance, (KValue*)&result);
 
     if (self)
         self->__sig = sig;

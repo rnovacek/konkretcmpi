@@ -247,6 +247,13 @@ static void recursive_dependencies(const string& cn, vector<string>& deps)
                         recursive_dependencies(p->ref_name, deps);
                     }
                 }
+                else if (p->qualifiers->has_key("EmbeddedInstance"))
+                {
+                    char *name = p->qualifiers->get("EmbeddedInstance")->params->string_value;
+                    if (!contains(deps, name)) {
+                        recursive_dependencies(name, deps);
+                    }
+                }
             }
             continue;
         }

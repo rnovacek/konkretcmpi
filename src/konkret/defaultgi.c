@@ -28,9 +28,7 @@
 #define enumInstanceNames enumerateInstanceNames
 #include "konkret.h"
 
-#if 0
-# define DIRECT_CALL
-#endif
+#define DIRECT_CALL
 
 #if defined(DIRECT_CALL)
 

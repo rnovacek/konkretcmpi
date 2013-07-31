@@ -76,6 +76,9 @@ const char* MOF_Data_Type::to_string(int data_type)
         case TOK_DATETIME: 
             return "datetime";
 
+        case TOK_INSTANCE:
+            return "instance";
+
         default:
             MOF_ASSERT(false);
             return 0;

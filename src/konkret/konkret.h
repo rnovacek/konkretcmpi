@@ -205,8 +205,9 @@ KINLINE void KPutStatus(CMPIStatus* st)
         fprintf(stderr, "CMPIStatus{%u, %s}\n", st->rc, KChars(st->msg));
 }
 
+__attribute__((format(printf, 3, 4)))
 KINLINE CMPIStatus __KReturn2(
-    const CMPIBroker* cb, 
+    const CMPIBroker* cb,
     CMPIrc rc,
     const char* format,
     ...)

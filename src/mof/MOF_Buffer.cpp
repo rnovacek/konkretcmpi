@@ -26,10 +26,11 @@
 */
 
 #include "MOF_Buffer.h"
+#include "MOF_Error.h"
 
-inline MOF_uint32 _next_pow_2(MOF_uint32 x)
+inline size_t _next_pow_2(size_t x)
 {
-    MOF_uint32 r = 1;
+    size_t r = 1;
 
     while (r < x)
         r <<= 1;
@@ -37,7 +38,7 @@ inline MOF_uint32 _next_pow_2(MOF_uint32 x)
     return r;
 }
 
-inline MOF_uint32 _round_capacity(MOF_uint32 capacity)
+inline size_t _round_capacity(size_t capacity)
 {
     return capacity < 16 ? 16 : _next_pow_2(capacity);
 }
@@ -54,6 +55,12 @@ void MOF_Buffer::reserve(size_t capacity)
 
 void MOF_Buffer::append(const char* data, size_t size)
 {
+    if (_size + size < _size) {
+        // It would overflow, because both size and _size are unsigned
+        // and their sum can't be lower than any of them
+        MOF_error_printf("Integer overflow detected");
+        return;
+    }
     reserve(_size + size);
     memcpy(_data + _size, data, size);
     _size += size;

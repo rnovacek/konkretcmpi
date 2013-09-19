@@ -54,12 +54,15 @@ vector<string> aliases;
 vector<char> torder;
 vector<pair<string,string> > rall;
 vector<pair<string,map<string,string> > > pall;
-vector<map<string,string> > mall;
+vector<pair<string,map<string,string> > > oall;
+vector<map<string,string> > aall;
 
-string eta, eti, etn;
+string eta, eti, etn, etm;
 string ofile;
 
 bool around = false;
+
+static void transform(string &text, const MOF_Class_Decl* cd, const MOF_Method_Decl* md);
 
 static void substitute(
     string& text, 
@@ -891,67 +894,13 @@ static const char* to_upper(char* buf, const char* s)
     return buf;
 }
 
-static void exmethod(FILE* os, const MOF_Class_Decl* cd, const MOF_Method_Decl* md)
-{
-
-    string append;
-/*    if (md->qual_mask & MOF_QT_STATIC)
-        put(os, STATIC_HEADER, sn, mn, ktn, NULL);
-    else
-        put(os, HEADER, sn, mn, ktn, NULL);
-*/
-    for (MOF_Parameter* p = md->parameters; p; p = (MOF_Parameter*)p->next)
-    {
-/*        const char* mod = (p->qual_mask & MOF_QT_OUT) ? "" : "const ";*/
-
-        string type;
-        string name;
-        if (p->data_type == TOK_REF)
-        {
-            if (p->array_index)
-                type = string("KrefA");
-            else
-       
-                type = string("Kref");
-        }
-        else
-        {
-            const char* ktn = _ktype_name(p->data_type);
-
-            if (p->array_index)
-                type = string(ktn)+string("A"); /* p->name */
-            else
-                type = string(ktn);
-        }
-        name = p->name;
-
-        for (vector<map<string,string> >::iterator mi = mall.begin(); mi != mall.end(); mi++)
-        {
-            map<string,string> mrules = (*mi);
-            if (mrules.find(type) != mrules.end()){
-                append = mrules[type];
-                printf("\nTo be appended to method %s\n", append.c_str());
-                substitute(append, "<MTYPE>", type);
-                substitute(append, "<MNAME>", name);
-                printf("\nTransformed method appendix %s\n", append.c_str());
-                put(os, append.c_str(), NULL);
-
-            }
-
-        }
-        
-    }
-
-
-    return;
-
-}
-
 static void gen_meth_stub(
     FILE* os, 
     const MOF_Class_Decl* cd, 
     const MOF_Method_Decl* md)
 {
+    const char* sn = alias(cd->name);
+    const char* mn = md->name;
     const char* ktn = _ktype_name(md->data_type);
     char buf[1024];
 
@@ -967,13 +916,38 @@ static void gen_meth_stub(
         "    $0 result = $1_INIT;\n"
         "\n";
 
+    string text;
     if (around)
-        put(os, BODY_LEAD_AROUND, ktn, to_upper(buf, ktn), NULL);
+        text = BODY_LEAD_AROUND;
+/*        put(os, BODY_LEAD_AROUND, ktn, to_upper(buf, ktn), NULL);*/
     else
-        put(os, BODY_LEAD, ktn, to_upper(buf, ktn), NULL);
+        text = BODY_LEAD;
+/*        put(os, BODY_LEAD, ktn, to_upper(buf, ktn), NULL);*/
+
+    if (!etm.empty()) {
+        text += etm;
+/*        put(os, etm.c_str(), ktn, to_upper(buf, ktn), NULL);*/
+    }
+
+    /* Replacements, including output arguments */
+    transform(text, cd, md);
+
+    /* Method credentials */
+    substitute(text, "<MNAME>", mn);
+    substitute(text, "<MTYPE>", ktn);
+    substitute(text, "<ALIAS>", sn);
+    substitute(text, "<CLASS>", cd->name);
+
+    /* Write */
+    put(os, text.c_str(), ktn, to_upper(buf, ktn), NULL);
+
+/*    transform(text, cd, md);
+    substitute(text, "<ALIAS>", sn);
+    substitute(text, "<CLASS>", cd->name);
+    fprintf(os, "%s", text.c_str());
 
     exmethod(os, cd, md);
-
+*/
     const char BODY_OUT[] =
         "    KSetStatus(status, ERR_NOT_SUPPORTED);\n"
         "    return result;\n"
@@ -2380,6 +2354,51 @@ static void expropers(string &text, const pair<string,map<string,string> > pset,
     return;
 }
 
+static void exoutputarg(string &text, const pair<string,map<string,string> > oset, const MOF_Class_Decl* cd, const MOF_Method_Decl* md)
+{
+    printf("Output argument pattern %s\n",oset.first.c_str());
+    string chunk;
+
+    const char* ktn = _ktype_name(md->data_type);
+    map<string,string> orules = oset.second;
+
+    for (MOF_Parameter* p = md->parameters; p; p = (MOF_Parameter*)p->next)
+    {
+        string append;
+        bool out = p->qual_mask & MOF_QT_OUT;
+        if (!out) continue;
+
+        string type;
+        if (p->array_index == 0) {
+            // is not array
+            type = string(_ktype_name(p->data_type));
+        } else {
+            // is array
+            type = string(_ktype_name(p->data_type))+string("A");
+        }
+
+        // XXX may need to extend by property name, class name, subclass name, superclass name rules
+        printf("Lookup %s\n", type.c_str());
+        for (map<string,string>::iterator oi = orules.begin(); oi!=orules.end(); oi++) {
+            printf("  among %s\n", (*oi).first.c_str());
+        }
+        if (orules.find(type) != orules.end()) {
+            // type has mapping rule
+            append = orules[type];
+            printf("\nTo be appended %s\n", append.c_str());
+            substitute(append, "<MOTYPE>", type);
+            substitute(append, "<MONAME>", p->name);
+            printf("\nTransformed appendix %s\n", append.c_str());
+            chunk+=append;
+            printf("\nMerged chunk %s\n", chunk.c_str());
+        }
+    }
+    
+    printf("Finished output argument ==========\n%s==========\n", chunk.c_str());
+    substitute(text, oset.first, chunk);
+    return;
+}
+
 static void exreplace(string &text, const pair<string,string> rrule)
 {
     ifstream rchunk(rrule.second.c_str(), ios::in|ios::ate|ios::binary);
@@ -2398,11 +2417,12 @@ static void exreplace(string &text, const pair<string,string> rrule)
     return;
 }
 
-static void transform(string &text, const MOF_Class_Decl* cd)
+static void transform(string &text, const MOF_Class_Decl* cd, const MOF_Method_Decl* md)
 {
     
     vector<pair<string,string> >::iterator ri = rall.begin();
     vector<pair<string,map<string,string> > >::iterator pi = pall.begin();
+    vector<pair<string,map<string,string> > >::iterator oi = oall.begin();
     for (vector<char>::iterator t = torder.begin(); t != torder.end(); t++) {
         switch (*t) {
         case 'R':
@@ -2414,6 +2434,12 @@ static void transform(string &text, const MOF_Class_Decl* cd)
             printf("%s transformed to properties.\n", (*pi).first.c_str());
             expropers(text, *pi, cd);
             pi++;
+        break;
+        case 'O':
+            if (NULL == md) break; /* Run only with valid method declaration */
+            printf("%s transformed to method output arguments.\n", (*oi).first.c_str());
+            exoutputarg(text, *oi, cd, md);
+            oi++;
         break;
         }
     }
@@ -2460,7 +2486,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = eta;
         }
-        transform(text, cd);
+        transform(text, cd, NULL);
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2475,7 +2501,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = etn;
         }
-        transform(text, cd);
+        transform(text, cd, NULL);
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2490,7 +2516,7 @@ static void gen_provider(const MOF_Class_Decl* cd)
         } else {
             text = eti;
         }
-        transform(text, cd);
+        transform(text, cd, NULL);
         substitute(text, "<ALIAS>", sn);
         substitute(text, "<CLASS>", cd->name);
         fprintf(os, "%s", text.c_str());
@@ -2721,18 +2747,20 @@ int main(int argc, char** argv)
         "OPTIONS:\n"
         "  -P STR=FILE Replace STR with properties. With property rules in FILE\n"
         "  -R STR=FILE Replace STR for contents of FILE\n"
-        "  -M FILE     Method argument type processing rules in FILE\n"
+        "  -O STR=FILE Replace STR with method output arguments.\n"
         "  -I DIR      Search for included MOF files in this directory\n"
         "  -m FILE     Add MOF file to list of MOFs to parse\n"
         "  -v          Print the version\n"
         "  -s CLASS    Write provider skeleton for CLASS to <ALIAS>Provider.c\n"
         "              (or use CLASS=ALIAS! form instead).\n"
         "  -o FILE     Write main skeleton to custom FILE.\n"
+        "  -k          Use __status instead of status for result reporting.\n"
         "  -f FILE     Read CLASS=ALIAS[!] argumetns the given file.\n"
         "  -h          Print this help message\n"
         "  -a FILE     Template for association provider\n"
         "  -c FILE     Template for class instance provider\n"
         "  -n FILE     Template for indication provider\n"
+        "  -M FILE     Template for method provider\n"
         "\n"
         "ENVIRONMENT VARIABLES:\n"
         "  KONKRET_SCHEMA_DIR -- searched for schema MOF files\n"
@@ -2803,7 +2831,7 @@ int main(int argc, char** argv)
 
     vector<string> args;
 
-    for (int opt; (opt = getopt(argc, argv, "P:R:I:m:vhs:pf:a:c:n:o:kM:")) != -1; )
+    for (int opt; (opt = getopt(argc, argv, "P:R:I:m:vhs:f:a:c:n:o:kM:O:")) != -1; )
     {
         switch (opt)
         {
@@ -2867,7 +2895,7 @@ int main(int argc, char** argv)
 
                 if (tmpfile.size() == 0)
                 {
-                    err("Invalid -P option %s. Use -P PATTERN=FILENAME", optarg);
+                    err("Invalid -R option %s. Use -R PATTERN=FILENAME", optarg);
                 }
 
                 ifstream ifile(tmpfile.c_str(), ios::in|ios::ate|ios::binary);
@@ -2881,7 +2909,51 @@ int main(int argc, char** argv)
                 break;
             }
 
-            case 'M':
+            case 'O':
+            {
+                torder.push_back('O');
+                string replace;
+                replace.assign(optarg);
+                
+                string token = replace.substr(0, replace.find('='));
+                string ofilename = replace.substr(replace.find('=') + 1);
+
+                if (ofilename.size() == 0)
+                {
+                    err("Invalid -O option %s. Use -O PATTERN=FILENAME", optarg);
+                }
+
+                ifstream omap(ofilename.c_str(), ios::in|ios::binary);
+                if (!omap) {
+                    err("Output argument replacement file %s missing or unreadable.", ofilename.c_str());
+                } else {
+                    printf("Processing %s\n", ofilename.c_str());
+                }
+
+                string line;
+                map <string,string> tlist;
+                while (getline(omap, line)) {
+                        printf("-O line: %s\n", line.c_str());
+                        string otype = line.substr(0, line.find('='));
+                        string ofile = line.substr(line.find('=') + 1);
+
+                        ifstream codefile(ofile.c_str(), ios::in|ios::ate|ios::binary);
+                        if (!codefile) {
+                                err("Output argument type %s replacement file %s missing or unreadable.", otype.c_str(), ofile.c_str());
+                        }
+                        codefile.close();
+                        string ocode = extemplate(ofile.c_str());
+                        tlist[otype] = ocode;
+                        printf("Output argument type %s for %s\n", otype.c_str(), ocode.c_str());
+                }
+                omap.close();
+
+                oall.push_back(pair<string,map<string, string> >(token, tlist));
+
+                break;
+            }
+
+            case 'A':
             {
                 string mfilename;
                 mfilename.assign(optarg);
@@ -2916,7 +2988,7 @@ int main(int argc, char** argv)
                 }
                 imamap.close();
 
-                mall.push_back(map<string, string>(tlist));
+                aall.push_back(map<string, string>(tlist));
 
                 break;
             }
@@ -2995,6 +3067,9 @@ int main(int argc, char** argv)
             case 'n':
                 etn = extemplate(optarg);
                 break; 
+            case 'M':
+                etm = extemplate(optarg);
+                break;
             case 'k':
                 around = true;
                 break;

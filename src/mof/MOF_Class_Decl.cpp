@@ -644,6 +644,9 @@ void MOF_Class_Decl::validate()
                     MOF_warning_printf("EmbeddedInstance qualifier allowed "
                         "only on string properties: %s.%s", name, prop->name);
                 }
+                // EmbeddedInstance has type string, but we want to work
+                // with it as Instance
+                prop->data_type = TOK_INSTANCE;
             }
             else if (p->type == MOF_FEATURE_METHOD)
             {
@@ -654,6 +657,9 @@ void MOF_Class_Decl::validate()
                     MOF_warning_printf("EmbeddedInstance qualifier allowed "
                         "only on string properties: %s.%s", name, meth->name);
                 }
+                // EmbeddedInstance has type string, but we want to work
+                // with it as Instance
+                meth->data_type = TOK_INSTANCE;
             }
         }
     }

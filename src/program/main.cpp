@@ -55,6 +55,7 @@ vector<char> torder;
 vector<pair<string,string> > rall;
 vector<pair<string,map<string,string> > > pall;
 vector<pair<string,map<string,string> > > oall;
+vector<pair<string,map<string,string> > > iall;
 vector<map<string,string> > aall;
 
 string eta, eti, etn, etm;
@@ -2319,7 +2320,6 @@ static void expropers_decls(string &chunk, map<string,string> prules, const MOF_
 {
     string append;
 
-    printf("Properties of %s\n", cd->name);
     for (MOF_Feature_Info* p = cd->all_features; p;
         p = (MOF_Feature_Info*)p->next)
     {
@@ -2346,27 +2346,13 @@ static void expropers_decls(string &chunk, map<string,string> prules, const MOF_
                 type = string(_ktype_name(pd->data_type))+string("A");
             }
 
-            // XXX may need to extend by property name, class name, subclass name, superclass name rules
-            printf("Lookup %s\n", type.c_str());
-            for (map<string,string>::iterator pi = prules.begin(); pi!=prules.end(); pi++) {
-                printf("  among %s\n", (*pi).first.c_str());
-            }
             if (prules.find(type) != prules.end()) {
                 // type has mapping rule
                 append = prules[type];
-                printf("\nTo be appended %s\n", append.c_str());
                 substitute(append, "<PTYPE>", type);
                 substitute(append, "<PNAME>", pd->name);
-                printf("\nTransformed appendix %s\n", append.c_str());
                 chunk+=append;
-                printf("\nMerged chunk %s\n", chunk.c_str());
             }
-
-            if (pd->array_index == 0) {
-                printf("    const %s %s;\n", ktn, pn);
-            } else {
-                printf("    const %sA %s;\n", ktn, pn);
-           }
         }
     }
     return;
@@ -2376,7 +2362,6 @@ static void expropers_recursive(string &chunk, const map<string,string> prules, 
 {
     if (cd->super_class) {
         expropers_recursive(chunk, prules, cd->super_class);
-        printf("Nested chunk =======\n%s=======\n", chunk.c_str());
     }
     expropers_decls(chunk, prules, cd);
     return;
@@ -2384,17 +2369,14 @@ static void expropers_recursive(string &chunk, const map<string,string> prules, 
 
 static void expropers(string &text, const pair<string,map<string,string> > pset, const MOF_Class_Decl* cd)
 {
-    printf("Property pattern %s\n",pset.first.c_str());
     string chunk;
     expropers_recursive(chunk, pset.second, cd);
-    printf("Finished properties ==========\n%s==========\n", chunk.c_str());
     substitute(text, pset.first, chunk);
     return;
 }
 
 static void exoutputarg(string &text, const pair<string,map<string,string> > oset, const MOF_Class_Decl* cd, const MOF_Method_Decl* md)
 {
-    printf("Output argument pattern %s\n",oset.first.c_str());
     string chunk;
 
     const char* ktn = _ktype_name(md->data_type);
@@ -2415,27 +2397,54 @@ static void exoutputarg(string &text, const pair<string,map<string,string> > ose
             type = string(_ktype_name(p->data_type))+string("A");
         }
 
-        // XXX may need to extend by property name, class name, subclass name, superclass name rules
-        printf("Lookup %s\n", type.c_str());
-        for (map<string,string>::iterator oi = orules.begin(); oi!=orules.end(); oi++) {
-            printf("  among %s\n", (*oi).first.c_str());
-        }
         if (orules.find(type) != orules.end()) {
             // type has mapping rule
             append = orules[type];
-            printf("\nTo be appended %s\n", append.c_str());
             substitute(append, "<MOTYPE>", type);
             substitute(append, "<MONAME>", p->name);
-            printf("\nTransformed appendix %s\n", append.c_str());
             chunk+=append;
-            printf("\nMerged chunk %s\n", chunk.c_str());
         }
     }
     
-    printf("Finished output argument ==========\n%s==========\n", chunk.c_str());
     substitute(text, oset.first, chunk);
     return;
 }
+
+static void exinputarg(string &text, const pair<string,map<string,string> > iset, const MOF_Class_Decl* cd, const MOF_Method_Decl* md)
+{
+    string chunk;
+
+    const char* ktn = _ktype_name(md->data_type);
+    map<string,string> irules = iset.second;
+
+    for (MOF_Parameter* p = md->parameters; p; p = (MOF_Parameter*)p->next)
+    {
+        string append;
+        bool in = p->qual_mask & MOF_QT_IN;
+        if (!in) continue;
+
+        string type;
+        if (p->array_index == 0) {
+            // is not array
+            type = string(_ktype_name(p->data_type));
+        } else {
+            // is array
+            type = string(_ktype_name(p->data_type))+string("A");
+        }
+
+        if (irules.find(type) != irules.end()) {
+            // type has mapping rule
+            append = irules[type];
+            substitute(append, "<MITYPE>", type);
+            substitute(append, "<MINAME>", p->name);
+            chunk+=append;
+        }
+    }
+    
+    substitute(text, iset.first, chunk);
+    return;
+}
+
 
 static void exreplace(string &text, const pair<string,string> rrule)
 {
@@ -2461,6 +2470,7 @@ static void transform(string &text, const MOF_Class_Decl* cd, const MOF_Method_D
     vector<pair<string,string> >::iterator ri = rall.begin();
     vector<pair<string,map<string,string> > >::iterator pi = pall.begin();
     vector<pair<string,map<string,string> > >::iterator oi = oall.begin();
+    vector<pair<string,map<string,string> > >::iterator ii = iall.begin();
     for (vector<char>::iterator t = torder.begin(); t != torder.end(); t++) {
         switch (*t) {
         case 'R':
@@ -2479,6 +2489,13 @@ static void transform(string &text, const MOF_Class_Decl* cd, const MOF_Method_D
             exoutputarg(text, *oi, cd, md);
             oi++;
         break;
+        case 'i':
+            if (NULL == md) break; /* Run only with valid method declaration */
+            printf("%s transformed to method input arguments.\n", (*ii).first.c_str());
+            exinputarg(text, *ii, cd, md);
+            ii++;
+        break;
+
         }
     }
     return;
@@ -2786,6 +2803,7 @@ int main(int argc, char** argv)
         "  -P STR=FILE Replace STR with properties. With property rules in FILE\n"
         "  -R STR=FILE Replace STR for contents of FILE\n"
         "  -O STR=FILE Replace STR with method output arguments.\n"
+        "  -i STR=FILE Replace STR with method input arguments.\n"
         "  -I DIR      Search for included MOF files in this directory\n"
         "  -m FILE     Add MOF file to list of MOFs to parse\n"
         "  -v          Print the version\n"
@@ -2869,7 +2887,7 @@ int main(int argc, char** argv)
 
     vector<string> args;
 
-    for (int opt; (opt = getopt(argc, argv, "P:R:I:m:vhs:f:a:c:n:o:kM:O:")) != -1; )
+    for (int opt; (opt = getopt(argc, argv, "P:R:I:m:vhs:f:a:c:n:o:kM:O:i:")) != -1; )
     {
         switch (opt)
         {
@@ -2895,14 +2913,11 @@ int main(int argc, char** argv)
                 ifstream pmap(pfilename.c_str(), ios::in|ios::binary);
                 if (!pmap) {
                     err("Property replacement file %s missing or unreadable.", pfilename.c_str());
-                } else {
-                    printf("Processing %s\n", pfilename.c_str());
                 }
 
                 string line;
                 map <string,string> tlist;
                 while (getline(pmap, line)) {
-                        printf("-P line: %s\n", line.c_str());
                         string ptype = line.substr(0, line.find('='));
                         string pfile = line.substr(line.find('=') + 1);
 
@@ -2913,7 +2928,6 @@ int main(int argc, char** argv)
                         codefile.close();
                         string pcode = extemplate(pfile.c_str());
                         tlist[ptype] = pcode;
-                        printf("Property type %s for %s\n", ptype.c_str(), pcode.c_str());
                 }
                 pmap.close();
 
@@ -2964,14 +2978,11 @@ int main(int argc, char** argv)
                 ifstream omap(ofilename.c_str(), ios::in|ios::binary);
                 if (!omap) {
                     err("Output argument replacement file %s missing or unreadable.", ofilename.c_str());
-                } else {
-                    printf("Processing %s\n", ofilename.c_str());
                 }
 
                 string line;
                 map <string,string> tlist;
                 while (getline(omap, line)) {
-                        printf("-O line: %s\n", line.c_str());
                         string otype = line.substr(0, line.find('='));
                         string ofile = line.substr(line.find('=') + 1);
 
@@ -2982,11 +2993,50 @@ int main(int argc, char** argv)
                         codefile.close();
                         string ocode = extemplate(ofile.c_str());
                         tlist[otype] = ocode;
-                        printf("Output argument type %s for %s\n", otype.c_str(), ocode.c_str());
                 }
                 omap.close();
 
                 oall.push_back(pair<string,map<string, string> >(token, tlist));
+
+                break;
+            }
+
+            case 'i':
+            {
+                torder.push_back('i');
+                string replace;
+                replace.assign(optarg);
+                
+                string token = replace.substr(0, replace.find('='));
+                string ifilename = replace.substr(replace.find('=') + 1);
+
+                if (ifilename.size() == 0)
+                {
+                    err("Invalid -i option %s. Use -i PATTERN=FILENAME", optarg);
+                }
+
+                ifstream imap(ifilename.c_str(), ios::in|ios::binary);
+                if (!imap) {
+                    err("Input argument replacement file %s missing or unreadable.", ifilename.c_str());
+                }
+
+                string line;
+                map <string,string> tlist;
+                while (getline(imap, line)) {
+                        string itype = line.substr(0, line.find('='));
+                        string ifile = line.substr(line.find('=') + 1);
+
+                        ifstream codefile(ifile.c_str(), ios::in|ios::ate|ios::binary);
+                        if (!codefile) {
+                                err("Input argument type %s replacement file %s missing or unreadable.", itype.c_str(), ifile.c_str());
+                        }
+                        codefile.close();
+                        string icode = extemplate(ifile.c_str());
+                        tlist[itype] = icode;
+                }
+                imap.close();
+
+                iall.push_back(pair<string,map<string, string> >(token, tlist));
 
                 break;
             }
@@ -3004,14 +3054,11 @@ int main(int argc, char** argv)
                 ifstream imamap(mfilename.c_str(), ios::in|ios::binary);
                 if (!imamap) {
                     err("Method argument replacement file %s missing or unreadable.", mfilename.c_str());
-                } else {
-                    printf("Processing %s\n", mfilename.c_str());
                 }
 
                 string line;
                 map <string,string> tlist;
                 while (getline(imamap, line)) {
-                        printf("-M line: %s\n", line.c_str());
                         string mtype = line.substr(0, line.find('='));
                         string mfile = line.substr(line.find('=') + 1);
 
@@ -3022,7 +3069,6 @@ int main(int argc, char** argv)
                         codefile.close();
                         string mcode = extemplate(mfile.c_str());
                         tlist[mtype] = mcode;
-                        printf("Method argument type %s for %s\n", mtype.c_str(), mcode.c_str());
                 }
                 imamap.close();
 

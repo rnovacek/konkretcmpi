@@ -171,7 +171,37 @@ static void _validate_feature_compatibility(
         MOF_Property_Decl* qq = (MOF_Property_Decl*)q;
 
         if (pp->data_type != qq->data_type)
-            MOF_error_printf(MESSAGE, p->name);
+        {
+            int embedded_instance = 0;
+
+            /* If this property is TOK_STRING and the parent is TOK_INSTANCE,
+             * then check if the EmbeddedInstance qualifier is set.
+             * In this case, data_type string will be mapped to instance later
+             * so allow it here.
+             */
+            if ((pp->data_type == TOK_STRING)
+                && (qq->data_type == TOK_INSTANCE))
+            {
+                for (MOF_Qualifier* qualifier = p->qualifiers; 
+                     qualifier;
+                     qualifier = (MOF_Qualifier*)qualifier->next)
+                {
+                    if (strcasecmp(qualifier->name, "EmbeddedInstance") == 0)
+                    {
+                        /* this string property defines actually an embedded_instance
+                         * so data_type string will actually match to instance
+                         */
+                        embedded_instance = 1;
+                        break;
+                    }
+                }
+            }
+            if (pp->data_type != qq->data_type
+                && embedded_instance == 0)
+            {
+                MOF_error_printf(MESSAGE, p->name);
+            }
+        }
 
         if (pp->array_index != qq->array_index)
             MOF_error_printf(MESSAGE, p->name);

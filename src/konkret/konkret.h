@@ -112,8 +112,10 @@
 
 #ifdef __GNUC__
 # define KUNUSED __attribute__((__unused__))
+# define KUSED __attribute__((__used__))
 #else
 # define KUNUSED /* empty */
+# define KUSED /* empty */
 #endif
 
 /*
@@ -2645,7 +2647,7 @@ KEXTERN size_t KStrlcat(char* dest, const char* src, size_t size);
 */
 
 #define KONKRET_REGISTRATION(NAMESPACE, CLASS, PROVIDERNAME, TYPES) \
-    static volatile KUNUSED const char __konkret_registration[] = \
+    static volatile KUSED const char __konkret_registration[] = \
     "@(#)KONKRET_REGISTRATION=" NAMESPACE ":" CLASS ":" PROVIDERNAME ":" TYPES;
 
 #endif /* _konkret_h */

@@ -506,7 +506,11 @@ static void gen_feature_decls(
 
             // Add sig entry [type][length][name][zero-terminator]
 
-            KTag tag = _ktag(pd->data_type, pd->array_index, key, false, false);
+            KTag tag;
+            if (pd->qualifiers->has_key("EmbeddedInstance"))
+                tag = _ktag(TOK_INSTANCE, pd->array_index, key, false, false);
+            else
+                tag = _ktag(pd->data_type, pd->array_index, key, false, false);
             pack_tag(sig, tag);
             pack_name(sig, pd->name);
             count++;
@@ -640,6 +644,7 @@ static void gen_param(FILE* os, MOF_Parameter* p, vector<unsigned char>& sig)
         const char* ktn = _ktype_name(p->data_type);
 
         if (p->qualifiers->has_key("EmbeddedInstance")) {
+            tag = _ktag(TOK_INSTANCE, p->array_index, false, in, out);
             if (p->array_index)
                 put(os, "    KInstanceA $0;\n", p->name, NULL);
             else

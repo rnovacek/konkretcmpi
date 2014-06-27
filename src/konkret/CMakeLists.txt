@@ -8,7 +8,7 @@ set(konkret_SRCS
     kstr.c
     print.c
 )
-
+include(rpath)
 include_directories(${CMPI_INCLUDE_DIR})
 
 add_library(libkonkret SHARED ${konkret_SRCS})

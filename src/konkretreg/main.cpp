@@ -180,6 +180,15 @@ int main(int argc, char** argv)
     {
         if (memcmp(p, REG, sizeof(REG)-1) == 0)
         {
+            if (n > 0 && *(p - 1) == '"')
+            {
+                // Some systems generate entry for the macro itself, we're not
+                // interested in it. There is a doublequote sign before name 
+                // of the entry.
+                p++;
+                n--;
+                continue;
+            }
             char buf[4096];
 
             size_t r = strlen(p) + 1;

@@ -81,6 +81,10 @@ MOF_Element* MOF_Element::clone_list() const
 
 void MOF_Element::delete_list()
 {
+    if (this == NULL)
+    {
+        return;
+    }
     for (MOF_Element* p = this; p; )
     {
         MOF_Element* next = p->next;

@@ -137,7 +137,10 @@ void MOF_Qualifier::validate()
         qual_decl->array_index == 0 &&
         (params == 0 || params->value_type == TOK_NULL_VALUE))
     {
-        params->delete_list();
+        if (params != 0)
+        {
+            params->delete_list();
+        }
         params = new MOF_Literal();
         params->value_type = TOK_BOOL_VALUE;
         params->bool_value = true;

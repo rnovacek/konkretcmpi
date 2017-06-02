@@ -34,6 +34,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <sys/types.h>
 #endif
 
 #if defined(__GNUC__) && (__GNUC__ >= 4)
